@@ -29,7 +29,7 @@ func main() {
 
 Check the [examples](examples) for more use cases. 
 
-You will need [sunodo cli](https://github.com/sunodo/sunodo/tree/main/apps/cli) to create and the example. and [curl](https://curl.se/) to interact with the dapp.
+You will need [sunodo cli](https://github.com/sunodo/sunodo/tree/main/apps/cli) to create and run the example, and [curl](https://curl.se/) to interact with the dapp.
 
 To run an example 
 
