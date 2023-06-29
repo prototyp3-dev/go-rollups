@@ -1,66 +1,58 @@
 package main
 
 import (
-  "fmt"
   "log"
   "os"
+  "fmt"
 
-  "github.com/prototyp3-dev/go-rollups"
+  "github.com/prototyp3-dev/go-rollups/rollups"
+  "github.com/prototyp3-dev/go-rollups/handler"
 )
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
 
-var relayMessage string
+type CustomHandler struct {
+  handler.Handler
+  NAdvances uint32
+  NInspects uint32
+}
 
-func GenericHandler(payloadHex string) error {
-  payload, err := rollups.Hex2Str(payloadHex)
-  if err != nil {
-    return fmt.Errorf("GenericHandler: hex error decoding payload: %s", err)
-  }
-  infolog.Println("Generic request payload:", payload)
+func (ch *CustomHandler) Advance(metadata *rollups.Metadata, payloadHex string) error {
+  ch.NAdvances += 1
+  
+  message := fmt.Sprint("Number of advances: ",ch.NAdvances)
+  infolog.Println(message)
 
-  report := rollups.Report{rollups.Str2Hex("Generic " + payload + relayMessage)}
-  _, err = rollups.SendReport(&report)
+  _, err := ch.SendNotice(&rollups.Notice{rollups.Str2Hex(message)})
   if err != nil {
-    return fmt.Errorf("GenericHandler: error making http request: %s", err)
+    return err
   }
 
   return nil
 }
 
-func HandleFixed(metadata *rollups.Metadata, payloadHex string) error {
-  infolog.Println("Received deposit")
-  report := rollups.Report{rollups.Str2Hex("Warning: Ignored any desposits")}
-  _, err := rollups.SendReport(&report)
+func (ch *CustomHandler) Inspect(payloadHex string) error {
+  ch.NInspects += 1
+
+  message := fmt.Sprint("Number of inspects: ",ch.NInspects, "(shouldn't change)")
+  infolog.Println(message)
+
+  err := ch.SendReport(&rollups.Report{rollups.Str2Hex(message)})
   if err != nil {
-    return fmt.Errorf("HandleFixed: error making http request: %s", err)
+    return err
   }
 
   return nil
 }
-
-
-func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
-  infolog.Println("Hey, I know this address, sender is",metadata.MsgSender,"and the my address is", payloadHex)
-  relayMessage = fmt.Sprint(" and the dapp address is ",payloadHex)
-  report := rollups.Report{rollups.Str2Hex("Set address relay")}
-  _, err := rollups.SendReport(&report)
-  if err != nil {
-    return fmt.Errorf("HandleFixed: error making http request: %s", err)
-  }
-
-  return nil
-}
-
 
 func main() {
-  rollups.InitializeRollupsAddresses("localhost")
+  cutomHandler := CustomHandler{}
+  cutomHandler.SetLogLevel(handler.Trace)
 
-  rollups.HandleDefault(GenericHandler)
-  rollups.HandleRollupsFixedAddresses(HandleFixed)
-  rollups.HandleFixedAddress(rollups.RollupsAddresses.DappAddressRelay, HandleRelay)
+  cutomHandler.HandleInspect(cutomHandler.Inspect)
+  cutomHandler.HandleAdvance(cutomHandler.Advance)
 
-  err := rollups.RunDebug()
+  err := cutomHandler.Run()
   if err != nil {
     log.Panicln(err)
   }

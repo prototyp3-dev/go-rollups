@@ -1,69 +1,28 @@
 package rollups
 
 import (
-	"encoding/json"
 	"encoding/hex"
-	"net/http"
-	"bytes"
-  "os"
   "math/big"
 )
 
-var rollup_server = os.Getenv("ROLLUP_HTTP_SERVER_URL")
-
-func SendPost(endpoint string, jsonData []byte) (*http.Response, error) {
-  req, err := http.NewRequest(http.MethodPost, rollup_server + "/" + endpoint, bytes.NewBuffer(jsonData))
-  if err != nil {
-    return &http.Response{}, err
-  }
-  req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-
-  return http.DefaultClient.Do(req)
+type EtherDeposit struct {
+  Depositor string
+  Amount *big.Int
+  Data []byte
 }
 
-func SendFinish(finish *Finish) (*http.Response, error) {
-  body, err := json.Marshal(finish)
-  if err != nil {
-    return &http.Response{}, err
-  }
-  
-  return SendPost("finish", body)
+type Erc20Deposit struct {
+  Depositor string
+  TokenAddress string
+  Amount *big.Int
+  Data []byte
 }
 
-func SendReport(report *Report) (*http.Response, error) {
-  body, err := json.Marshal(report)
-  if err != nil {
-    return &http.Response{}, err
-  }
-  
-  return SendPost("report", body)
-}
-
-func SendNotice(notice *Notice) (*http.Response, error) {
-  body, err := json.Marshal(notice)
-  if err != nil {
-    return &http.Response{}, err
-  }
-  
-  return SendPost("notice", body)
-}
-
-func SendVoucher(voucher *Voucher) (*http.Response, error) {
-  body, err := json.Marshal(voucher)
-  if err != nil {
-    return &http.Response{}, err
-  }
-  
-  return SendPost("voucher", body)
-}
-
-func SendException(exception *Exception) (*http.Response, error) {
-  body, err := json.Marshal(exception)
-  if err != nil {
-    return &http.Response{}, err
-  }
-  
-  return SendPost("exception", body)
+type Erc721Deposit struct {
+  Depositor string
+  TokenAddress string
+  TokenId *big.Int
+  Data []byte
 }
 
 func Hex2Str(hx string) (string, error) {

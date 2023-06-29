@@ -1,13 +1,15 @@
-package rollups
+package handler
 
 import (
   "encoding/json"
   "log"
   "os"
+
+  "github.com/prototyp3-dev/go-rollups/rollups"
 )
 
-type AdvanceMapHandlerFunc func(*Metadata,map[string]interface{}) error
-func (f AdvanceMapHandlerFunc) Handle(m *Metadata,p map[string]interface{}) error {
+type AdvanceMapHandlerFunc func(*rollups.Metadata,map[string]interface{}) error
+func (f AdvanceMapHandlerFunc) Handle(m *rollups.Metadata,p map[string]interface{}) error {
 	return f(m,p)
 }
 type AdvanceMapHandler struct {
@@ -38,11 +40,11 @@ func NewJsonHandler(routeKey string) *JsonHandler {
   debugLogger = log.New(os.Stderr, "[ debug ] ", log.Lshortfile)
   errorLogger = log.New(os.Stderr, "[ error ] ", log.Lshortfile)
 
-  handler := JsonHandler{RouteKey: routeKey}
-  handler.logLevel = Error
-  handler.HandleAdvanceRoutes(handler.jsonAdvanceHandler)
-  handler.HandleInspectRoutes(handler.jsonInspectHandler)
-  return &handler
+  h := JsonHandler{RouteKey: routeKey}
+  h.logLevel = Error
+  h.HandleAdvanceRoutes(h.jsonAdvanceHandler)
+  h.HandleInspectRoutes(h.jsonInspectHandler)
+  return &h
 }
 
 func (this *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
@@ -78,7 +80,7 @@ func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interfac
   var result map[string]interface{}
   if this.RouteKey != "" && this.RouteAdvanceHandlers != nil {
     // decode json and get route key
-    if payload, err := Hex2Str(payloadHex); err == nil {
+    if payload, err := rollups.Hex2Str(payloadHex); err == nil {
       if err = json.Unmarshal([]byte(payload), &result); err == nil {
         if route, ok := result[this.RouteKey].(string); ok {
           return route,result, true
@@ -89,7 +91,7 @@ func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interfac
   return "",result, false
 }
 
-func (this *JsonHandler) jsonAdvanceHandler(metadata *Metadata, payloadHex string) (error,bool) {
+func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
   if route,result, ok := this.getRoute(payloadHex); ok {
     if this.RouteAdvanceHandlers[route] != nil {
       if this.logLevel >= Debug {debugLogger.Println("Received JSON route",route,"Advance Request:",result) }

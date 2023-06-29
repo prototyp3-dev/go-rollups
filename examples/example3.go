@@ -1,57 +1,78 @@
 package main
 
 import (
+  "encoding/json"
+  "io/ioutil"
+  "strconv" 
+  "fmt"
   "log"
   "os"
-  "fmt"
 
-  "github.com/prototyp3-dev/go-rollups"
+  "github.com/prototyp3-dev/go-rollups/rollups"
+  "github.com/prototyp3-dev/go-rollups/handler"
 )
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
 
-type CustomHandler struct {
-  rollups.Handler
-  NAdvances uint32
-  NInspects uint32
-}
+func HandleAdvance(metadata *rollups.Metadata, payloadHex string) error {
+  payload, err := rollups.Hex2Str(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleAdvance: hex error decoding payload:", err)
+  }
+  infolog.Println("Advance request payload:", payload)
 
-func (handler *CustomHandler) Advance(metadata *rollups.Metadata, payloadHex string) error {
-  handler.NAdvances += 1
+  notice := rollups.Notice{rollups.Str2Hex("Advanced " + payload)}
+  res, err := rollups.SendNotice(&notice)
+  if err != nil {
+    return fmt.Errorf("HandleAdvance: error making http request: %s", err)
+  }
+ 
+  body, err := ioutil.ReadAll(res.Body)
+  if err != nil {
+    return fmt.Errorf("HandleAdvance: could not read response body: %s", err)
+  }
   
-  message := fmt.Sprint("Number of advances: ",handler.NAdvances)
-  infolog.Println(message)
-
-  _, err := handler.SendNotice(&rollups.Notice{rollups.Str2Hex(message)})
+  var indexRes rollups.IndexResponse
+  err = json.Unmarshal(body, &indexRes)
   if err != nil {
-    return err
+    return fmt.Errorf("HandleAdvance: Error unmarshaling body: %s", err)
   }
+  infolog.Println("Received notice status", strconv.Itoa(res.StatusCode), "body", string(body), "index", strconv.FormatUint(indexRes.Index,10))
 
   return nil
 }
 
-func (handler *CustomHandler) Inspect(payloadHex string) error {
-  handler.NInspects += 1
-
-  message := fmt.Sprint("Number of inspects: ",handler.NInspects)
-  infolog.Println(message)
-
-  err := handler.SendReport(&rollups.Report{rollups.Str2Hex(message)})
+func HandleInspect(payloadHex string) error {
+  payload, err := rollups.Hex2Str(payloadHex)
   if err != nil {
-    return err
+    return fmt.Errorf("HandleInspect: hex error decoding payload: %s", err)
+  }
+  infolog.Println("Inspect request payload:", payload)
+
+  report := rollups.Report{rollups.Str2Hex("Inspected " + payload)}
+  res, err := rollups.SendReport(&report)
+  if err != nil {
+    return fmt.Errorf("HandleInspect: error making http request: %s", err)
   }
 
+  body, err := ioutil.ReadAll(res.Body)
+  if err != nil {
+    return fmt.Errorf("HandleInspect: could not read response body:", err)
+  }
+  infolog.Println("Received report status", strconv.Itoa(res.StatusCode), "body", string(body))
+  
   return nil
 }
+
 
 func main() {
-  handler := CustomHandler{}
-  handler.SetLogLevel(rollups.Trace)
+  rollupsHandler := handler.NewSimpleHandler()
+  rollupsHandler.SetLogLevel(handler.Trace)
+  
+  rollupsHandler.HandleInspect(HandleInspect)
+  rollupsHandler.HandleAdvance(HandleAdvance)
 
-  handler.HandleInspect(handler.Inspect)
-  handler.HandleAdvance(handler.Advance)
-
-  err := handler.Run()
+  err := rollupsHandler.Run()
   if err != nil {
     log.Panicln(err)
   }

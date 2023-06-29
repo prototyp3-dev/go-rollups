@@ -1,93 +1,102 @@
 package main
 
 import (
+  "strconv"
   "fmt"
   "log"
   "os"
-
-  "github.com/prototyp3-dev/go-rollups"
+  "math/big"
+  
+  "github.com/prototyp3-dev/go-rollups/rollups"
+  "github.com/prototyp3-dev/go-rollups/handler"
 )
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
 
-var valuesMap map[string]string
+var dappAddress string
 
-func HandleAdvanceGet(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  return HandleGet(payloadMap)
-}
-
-func HandleGet(payloadMap map[string]interface{}) error {
-  infolog.Println("Route: get, payload:",payloadMap)
-  key, ok := payloadMap["key"].(string)
-
-  if !ok || key == "" {
-    message := "HandleGet: Not enough parameters, you must provide string 'key'"
-    report := rollups.Report{rollups.Str2Hex(message)}
-    _, err := rollups.SendReport(&report)
-    if err != nil {
-      return fmt.Errorf("HandleGet: error making http request: %s", err)
-    }
-    return fmt.Errorf(message)
-  }
-
-  value := valuesMap[key]
-  report := rollups.Report{rollups.Str2Hex(fmt.Sprint("Value of ",key," is ",value))}
-  _, err := rollups.SendReport(&report)
+func HandleEther(metadata *rollups.Metadata, payloadHex string) error {
+  deposit, err := rollups.DecodeEtherDeposit(payloadHex)
   if err != nil {
-    return fmt.Errorf("HandleGet: error making http request: %s", err)
+    return fmt.Errorf("HandleEther: error decoding deposit: %s", err)
   }
   
-  return nil
-}
+  infolog.Println("Received",new(big.Float).Quo(new(big.Float).SetInt(deposit.Amount),big.NewFloat(1e18)),"native Ether deposit from",deposit.Depositor,"data:",string(deposit.Data))
 
-func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  infolog.Println("Route: set, payload:",payloadMap)
-  key, okKey := payloadMap["key"].(string)
-  value, okVal := payloadMap["value"].(string)
-
-  if !okKey || !okVal || key == "" || value == "" {
-    message := "HandleSet: Not enough parameters, you must provide string 'key' and 'value'"
-    report := rollups.Report{rollups.Str2Hex(message)}
-    _, err := rollups.SendReport(&report)
+  if dappAddress != "" {
+    voucher := rollups.EtherWithdralVoucher(dappAddress, deposit.Depositor, deposit.Amount)
+    infolog.Println("Sending voucher destination",voucher.Destination,"payload",voucher.Payload)
+    res, err := rollups.SendVoucher(&voucher)
     if err != nil {
-      return fmt.Errorf("HandleSet: error making http request: %s", err)
+      return fmt.Errorf("HandleEther: error making http request: %s", err)
     }
-    return fmt.Errorf(message)
+    infolog.Println("Received voucher status", strconv.Itoa(res.StatusCode))
+  } else {
+    infolog.Println("Can't generate voucher as there is no dapp address configured")
   }
-  valuesMap[key] = value
-  report := rollups.Report{rollups.Str2Hex(fmt.Sprint("Value ",value," set for ",key))}
-  _, err := rollups.SendReport(&report)
-  if err != nil {
-    return fmt.Errorf("HandleSet: error making http request: %s", err)
-  }
-
   return nil
 }
 
+func HandleErc20(metadata *rollups.Metadata, payloadHex string) error {
+  deposit, err := rollups.DecodeErc20Deposit(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleErc20: error decoding deposit: %s", err)
+  }  
+  infolog.Println("Received",new(big.Float).Quo(new(big.Float).SetInt(deposit.Amount),big.NewFloat(1e18)),"tokens",deposit.TokenAddress,"Erc20 deposit from",deposit.Depositor,"data:",string(deposit.Data))
 
-func HandleWrongWay(payloadHex string) error {
-  message := "Unrecognized input, you should send a valid json"
-  report := rollups.Report{rollups.Str2Hex(message)}
+  voucher := rollups.Erc20TransferVoucher(deposit.Depositor, deposit.TokenAddress, deposit.Amount)
+  infolog.Println("Sending voucher destination",voucher.Destination,"payload",voucher.Payload)
+  res, err := rollups.SendVoucher(&voucher)
+  if err != nil {
+    return fmt.Errorf("HandleErc20: error making http request: %s", err)
+  }
+  infolog.Println("Received voucher status", strconv.Itoa(res.StatusCode))
+  return nil
+}
+
+func HandleErc721(metadata *rollups.Metadata, payloadHex string) error {
+  deposit, err := rollups.DecodeErc721Deposit(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleErc721: error decoding deposit:", err)
+  }
+
+  infolog.Println("Received id",deposit.TokenId,deposit.TokenAddress,"Erc721 deposit from",deposit.Depositor,"data:",string(deposit.Data))
+
+  if dappAddress != "" {
+    voucher := rollups.Erc721SafeTransferVoucher(dappAddress, deposit.Depositor, deposit.TokenAddress, deposit.TokenId)
+    infolog.Println("Sending voucher destination",voucher.Destination,"payload",voucher.Payload)
+    res, err := rollups.SendVoucher(&voucher)
+    if err != nil {
+      return fmt.Errorf("HandleErc721: error making http request: %s", err)
+    }
+    infolog.Println("Received voucher status", strconv.Itoa(res.StatusCode))
+  } else {
+    infolog.Println("Can't generate voucher as there is no dapp address configured")
+  }
+  return nil
+}
+
+func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
+  infolog.Println("Dapp Relay, sender is",metadata.MsgSender,"and the my address is", payloadHex)
+  dappAddress = payloadHex
+  report := rollups.Report{rollups.Str2Hex("Set address relay")}
   _, err := rollups.SendReport(&report)
   if err != nil {
-    return fmt.Errorf("HandleWrongWay: error making http request: %s", err)
+    return fmt.Errorf("HandleFixed: error making http request: %s", err)
   }
-  return fmt.Errorf(message)
+
+  return nil
 }
 
 func main() {
-  valuesMap = make(map[string]string)
+  handler.InitializeRollupsAddresses("localhost")
 
-  handler := rollups.NewJsonHandler("action")
+  handler.HandleFixedAddress(handler.RollupsAddresses.DappAddressRelay, HandleRelay)
+  handler.HandleFixedAddress(handler.RollupsAddresses.EtherPortalAddress, HandleEther)
+  handler.HandleFixedAddress(handler.RollupsAddresses.Erc20PortalAddress, HandleErc20)
+  handler.HandleFixedAddress(handler.RollupsAddresses.Erc721PortalAddress, HandleErc721)
 
-  handler.HandleAdvanceRoute("set", HandleSet)
-  handler.HandleAdvanceRoute("get", HandleAdvanceGet)
-  handler.HandleInspectRoute("get", HandleGet)
-
-  handler.HandleDefault(HandleWrongWay)
-
-  handler.SetDebug()
-  err := handler.Run()
+  err := handler.RunDebug()
   if err != nil {
     log.Panicln(err)
   }
