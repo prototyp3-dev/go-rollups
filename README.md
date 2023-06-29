@@ -35,7 +35,9 @@ To run an example
 
 ```shell
 cd examples
-NUM_EXAMPLE=1 sunodo build
+rm -rf example.go
+ln -sr example1.go example.go
+sunodo build
 sunodo run
 ```
 
@@ -48,7 +50,7 @@ sunodo send generic --input="test"
 Send inspects with
 
 ```shell
-curl http://localhost:8080/inspect/0x$(xxd -c10000 -p <<< 'test')
+curl http://localhost:8080/inspect/test
 ```
 
 Send notices with 

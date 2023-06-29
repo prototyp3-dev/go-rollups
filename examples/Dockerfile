@@ -23,13 +23,11 @@ ENV CGO_ENABLED=1
 ENV CC=riscv64-linux-gnu-gcc
 ENV PATH=/usr/local/go/bin:${PATH}
 
-ARG NUM_EXAMPLE=1
-
-COPY example${NUM_EXAMPLE}.go .
+COPY example.go .
 
 RUN go mod init dapp && \
     go mod tidy && \
-    go build -o dapp example${NUM_EXAMPLE}.go
+    go build -o dapp example.go
 
 # runtime stage: produces final image that will be executed
 FROM --platform=linux/riscv64 riscv64/ubuntu:22.04
