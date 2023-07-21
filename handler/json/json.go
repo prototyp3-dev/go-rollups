@@ -1,10 +1,9 @@
-package handler
+package jsonhandler
 
 import (
   "encoding/json"
-  "log"
-  "os"
 
+  hdl "github.com/prototyp3-dev/go-rollups/handler"
   "github.com/prototyp3-dev/go-rollups/rollups"
 )
 
@@ -25,23 +24,22 @@ type InspectMapHandler struct {
 }
 
 type JsonHandler struct {
-  Handler
+  hdl.Handler
   RouteKey string
   RouteAdvanceHandlers map[string]*AdvanceMapHandler
   RouteInspectHandlers map[string]*InspectMapHandler
 }
 
 func NewJsonHandler(routeKey string) *JsonHandler {
+  return AddJsonHandler(routeKey, hdl.NewSimpleHandler())
+}
+
+func AddJsonHandler(routeKey string, handler *hdl.Handler) *JsonHandler {
 	if routeKey == "" {
-		panic("rollups handler: invalid route key")
+		panic("json handler: invalid route key")
 	}
 
-  traceLogger = log.New(os.Stderr, "[ trace ] ", log.Lshortfile)
-  debugLogger = log.New(os.Stderr, "[ debug ] ", log.Lshortfile)
-  errorLogger = log.New(os.Stderr, "[ error ] ", log.Lshortfile)
-
-  h := JsonHandler{RouteKey: routeKey}
-  h.logLevel = Error
+  h := JsonHandler{RouteKey: routeKey, Handler: *handler}
   h.HandleAdvanceRoutes(h.jsonAdvanceHandler)
   h.HandleInspectRoutes(h.jsonInspectHandler)
   return &h
@@ -49,14 +47,17 @@ func NewJsonHandler(routeKey string) *JsonHandler {
 
 func (this *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
 	if fnHandle == nil {
-		panic("rollups handler: nil handler")
+		panic("json handler: nil handler")
 	}
 	if route == "" {
-		panic("rollups handler: invalid route")
+		panic("json handler: invalid route")
 	}
   if this.RouteAdvanceHandlers == nil {
     this.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
   }
+	if this.RouteAdvanceHandlers[route] != nil {
+		panic("json handler: route already added")
+	}
   fnHandler := AdvanceMapHandler{fnHandle}
   this.RouteAdvanceHandlers[route] = &fnHandler
 }
@@ -64,21 +65,24 @@ func (this *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHan
 
 func (this *JsonHandler) HandleInspectRoute(route string, fnHandle InspectMapHandlerFunc) {
 	if fnHandle == nil {
-		panic("rollups handler: nil handler")
+		panic("json handler: nil handler")
 	}
 	if route == "" {
-		panic("rollups handler: invalid route")
+		panic("json handler: invalid route")
 	}
   if this.RouteInspectHandlers == nil {
     this.RouteInspectHandlers = make(map[string]*InspectMapHandler)
   }
+	if this.RouteInspectHandlers[route] != nil {
+		panic("json handler: route already added")
+	}
   fnHandler := InspectMapHandler{fnHandle}
   this.RouteInspectHandlers[route] = &fnHandler
 }
 
 func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interface{},bool) {
   var result map[string]interface{}
-  if this.RouteKey != "" && this.RouteAdvanceHandlers != nil {
+  if this.RouteKey != "" {
     // decode json and get route key
     if payload, err := rollups.Hex2Str(payloadHex); err == nil {
       if err = json.Unmarshal([]byte(payload), &result); err == nil {
@@ -94,7 +98,7 @@ func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interfac
 func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
   if route,result, ok := this.getRoute(payloadHex); ok {
     if this.RouteAdvanceHandlers[route] != nil {
-      if this.logLevel >= Debug {debugLogger.Println("Received JSON route",route,"Advance Request:",result) }
+      if this.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Received JSON route",route,"Advance Request:",result) }
       return this.RouteAdvanceHandlers[route].Handler.Handle(metadata,result),true
     }
   }
@@ -104,7 +108,7 @@ func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadH
 func (this *JsonHandler) jsonInspectHandler(payloadHex string) (error,bool) {
   if route,result, ok := this.getRoute(payloadHex); ok {
     if this.RouteInspectHandlers[route] != nil {
-      if this.logLevel >= Debug {debugLogger.Println("Received JSON route",route,"Inspect Request:",result) }
+      if this.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Received JSON route",route,"Inspect Request:",result) }
       return this.RouteInspectHandlers[route].Handler.Handle(result),true
     }
   }

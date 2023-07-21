@@ -6,7 +6,7 @@ import (
   "os"
 
   "github.com/prototyp3-dev/go-rollups/rollups"
-  "github.com/prototyp3-dev/go-rollups/handler"
+  "github.com/prototyp3-dev/go-rollups/handler/json"
 )
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
@@ -76,10 +76,12 @@ func HandleWrongWay(payloadHex string) error {
   return fmt.Errorf(message)
 }
 
+// var dappWallet wallet.wallet
+
 func main() {
   valuesMap = make(map[string]string)
 
-  jsonHandler := handler.NewJsonHandler("method")
+  jsonHandler := jsonhandler.NewJsonHandler("method")
 
   jsonHandler.HandleAdvanceRoute("set", HandleSet)
   jsonHandler.HandleAdvanceRoute("get", HandleAdvanceGet)

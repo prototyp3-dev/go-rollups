@@ -1,5 +1,9 @@
 # Cartesi Rollups GO high level framework
 
+```
+This works for Cartesi Rollups version 0.9.x
+```
+
 Create cartesi rolllups DApp with codes like:
 
 ```go
@@ -36,7 +40,7 @@ To run an example
 ```shell
 cd examples
 rm -rf example.go
-ln -sr example1.go example.go
+ln -sr example1_rollups_helpers.go example.go
 sunodo build
 sunodo run
 ```
@@ -53,8 +57,12 @@ Send inspects with
 curl http://localhost:8080/inspect/test
 ```
 
-Send notices with 
+View notices with 
 
 ```shell
 curl -H 'Content-Type: application/json' -X POST http://localhost:8080/graphql -d '{"query": "query { notices { edges { node { index payload }}}}"}'
+```
+
+```
+DISCLAIMER: This is a prototype to showcase the Cartesi Rollups features and is not intended to be used as-is in the production environment
 ```
