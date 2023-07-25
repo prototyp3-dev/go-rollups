@@ -72,7 +72,7 @@ type Handler struct {
   RoutesAdvanceHandlers []*RoutesAdvanceHandler
   RoutesInspectHandlers []*RoutesInspectHandler
   RollupsFixedAddressHandler *AdvanceHandler
-  FixedAddressHandlers map[string]*AdvanceHandler
+  FixedAddressHandlers map[string]*RoutesAdvanceHandler
 }
 
 var ErrorLogger *log.Logger
@@ -85,8 +85,8 @@ func (this *Handler) SetDebug() {
   this.LogLevel = Debug
 }
 
-func (this *Handler) SetLogLevel(LogLevel LogLevel) {
-  this.LogLevel = LogLevel
+func (this *Handler) SetLogLevel(logLevel LogLevel) {
+  this.LogLevel = logLevel
 }
 
 func HandleDefault(fnHandle InspectHandlerFunc) {
@@ -149,9 +149,28 @@ func (this *Handler) HandleFixedAddress(address string, fnHandle AdvanceHandlerF
 		panic("rollups handler: invalid address")
 	}
   if this.FixedAddressHandlers == nil {
-    this.FixedAddressHandlers = make(map[string]*AdvanceHandler)
+    this.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
   }
-  fnHandler := AdvanceHandler{fnHandle}
+  fnHandler := RoutesAdvanceHandler{func(metadata *rollups.Metadata,payloadHex string) (error,bool) {
+    return fnHandle(metadata,payloadHex),true
+  }}
+  this.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
+}
+
+func HandleFixedAddressRoutes(address string, fnHandle RoutesAdvanceHandlerFunc) {
+  LocalHandler.HandleFixedAddressRoutes(address,fnHandle)
+}
+func (this *Handler) HandleFixedAddressRoutes(address string, fnHandle RoutesAdvanceHandlerFunc) {
+	if fnHandle == nil {
+		panic("rollups handler: nil handler")
+	}
+	if address == "" || address[:2] != "0x" || len(address) != 42 {
+		panic("rollups handler: invalid address")
+	}
+  if this.FixedAddressHandlers == nil {
+    this.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
+  }
+  fnHandler := RoutesAdvanceHandler{fnHandle}
   this.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
 }
 
@@ -177,7 +196,8 @@ func (this *Handler) HandleInspectRoutes(fnHandle RoutesInspectHandlerFunc) {
   this.RoutesInspectHandlers = append(this.RoutesInspectHandlers,&fnHandler)
 }
 
-func (this *Handler) SendNotice(notice *rollups.Notice) (uint64,error) {
+func (this *Handler) SendNotice(payloadHex string) (uint64,error) {
+  notice := &rollups.Notice{payloadHex}
   if this.LogLevel >= Trace {TraceLogger.Println("Sending notice status",notice)}
   res, err := rollups.SendNotice(notice)
   if err != nil {
@@ -199,7 +219,8 @@ func (this *Handler) SendNotice(notice *rollups.Notice) (uint64,error) {
   return indexRes.Index,nil
 }
 
-func (this *Handler) SendVoucher(voucher *rollups.Voucher) (uint64,error) {
+func (this *Handler) SendVoucher(destination string, payloadHex string) (uint64,error) {
+  voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex}
   if this.LogLevel >= Trace {TraceLogger.Println("Sending voucher status",voucher)}
   res, err := rollups.SendVoucher(voucher)
   if err != nil {
@@ -221,7 +242,8 @@ func (this *Handler) SendVoucher(voucher *rollups.Voucher) (uint64,error) {
   return indexRes.Index,nil
 }
 
-func (this *Handler) SendReport(report *rollups.Report) error {
+func (this *Handler) SendReport(payloadHex string) error {
+  report := &rollups.Report{payloadHex}
   if this.LogLevel >= Trace {TraceLogger.Println("Sending report status",report)}
   res, err := rollups.SendReport(report)
   if err != nil {
@@ -237,7 +259,8 @@ func (this *Handler) SendReport(report *rollups.Report) error {
   return nil
 }
 
-func (this *Handler) SendException(exception *rollups.Exception) error {
+func (this *Handler) SendException(payloadHex string) error {
+  exception := &rollups.Exception{payloadHex}
   if this.LogLevel >= Trace {TraceLogger.Println("Sending exception status",exception)}
   res, err := rollups.SendException(exception)
   if err != nil {
@@ -338,7 +361,9 @@ func (this *Handler) internalHandleFinish(response *rollups.FinishResponse) erro
 func (this *Handler) internalHandleAdvance(data *rollups.AdvanceResponse) error {
   if this.FixedAddressHandlers != nil {
     if this.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)] != nil {
-      return this.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)].Handler.handle(&data.Metadata,data.Payload)
+      if err,processed := this.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)].Handler.handle(&data.Metadata,data.Payload); processed { 
+        return err
+      }
     }
   }
   if this.RollupsFixedAddressHandler != nil && KnownRollupsAddresses[strings.ToLower(data.Metadata.MsgSender)] {
@@ -382,6 +407,9 @@ func (this *Handler) internalHandleInspect(data *rollups.InspectResponse) error 
 var RollupsAddresses NetworkAddresses
 var KnownRollupsAddresses map[string]bool
 
+func (this *Handler) InitializeRollupsAddresses(currentNetwork string) error {
+  return InitializeRollupsAddresses(currentNetwork)
+}
 func InitializeRollupsAddresses(currentNetwork string) error {
   if KnownRollupsAddresses != nil {
     return nil

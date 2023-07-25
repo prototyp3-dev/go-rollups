@@ -23,7 +23,7 @@ func (ch *CustomHandler) Advance(metadata *rollups.Metadata, payloadHex string) 
   message := fmt.Sprint("Number of advances: ",ch.NAdvances)
   infolog.Println(message)
 
-  _, err := ch.SendNotice(&rollups.Notice{rollups.Str2Hex(message)})
+  _, err := ch.SendNotice(rollups.Str2Hex(message))
   if err != nil {
     return err
   }
@@ -37,7 +37,7 @@ func (ch *CustomHandler) Inspect(payloadHex string) error {
   message := fmt.Sprint("Number of inspects: ",ch.NInspects, "(shouldn't change)")
   infolog.Println(message)
 
-  err := ch.SendReport(&rollups.Report{rollups.Str2Hex(message)})
+  err := ch.SendReport(rollups.Str2Hex(message))
   if err != nil {
     return err
   }

@@ -21,7 +21,7 @@ func HandleEther(metadata *rollups.Metadata, payloadHex string) error {
     return fmt.Errorf("HandleEther: error decoding deposit: %s", err)
   }
   
-  infolog.Println("Received",new(big.Float).Quo(new(big.Float).SetInt(deposit.Amount),big.NewFloat(1e18)),"native Ether deposit from",deposit.Depositor,"data:",string(deposit.Data))
+  infolog.Println("Received",new(big.Float).Quo(new(big.Float).SetInt(deposit.Amount),big.NewFloat(1e18)),"native token deposit from",deposit.Depositor,"data:",string(deposit.Data))
 
   if dappAddress != "" {
     voucher := rollups.EtherWithdralVoucher(dappAddress, deposit.Depositor, deposit.Amount)

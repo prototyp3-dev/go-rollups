@@ -23,7 +23,7 @@ type InspectMapHandler struct {
 }
 
 type UriHandler struct {
-  hdl.Handler
+  Handler *hdl.Handler
   RouteAdvanceHandlers map[string]*AdvanceMapHandler
   RouteInspectHandlers map[string]*InspectMapHandler
 }
@@ -33,9 +33,9 @@ func NewUriHandler() *UriHandler {
 }
 
 func AddUriHandler(handler *hdl.Handler) *UriHandler {
-  h := UriHandler{Handler: *handler}
-  h.HandleAdvanceRoutes(h.uriAdvanceHandler)
-  h.HandleInspectRoutes(h.uriInspectHandler)
+  h := UriHandler{Handler: handler}
+  h.Handler.HandleAdvanceRoutes(h.uriAdvanceHandler)
+  h.Handler.HandleInspectRoutes(h.uriInspectHandler)
   return &h
 }
 
@@ -54,6 +54,7 @@ func (this *UriHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHand
 	}
   fnHandler := AdvanceMapHandler{fnHandle}
   this.RouteAdvanceHandlers[route] = &fnHandler
+  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Advance route for",route) }
 }
 
 
@@ -72,12 +73,14 @@ func (this *UriHandler) HandleInspectRoute(route string, fnHandle InspectMapHand
 	}
   fnHandler := InspectMapHandler{fnHandle}
   this.RouteInspectHandlers[route] = &fnHandler
+  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Inspect route for",route) }
 }
 
 func (this *UriHandler) uriAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
   if payloadStr, err := rollups.Hex2Str(payloadHex); err == nil {
     for route, handler := range this.RouteAdvanceHandlers {
       if result, ok := tryUri(route,payloadStr); ok {
+        if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Advance Request:",result) }
         return handler.Handler.Handle(metadata,result),true
       }
     }
@@ -89,6 +92,7 @@ func (this *UriHandler) uriInspectHandler(payloadHex string) (error,bool) {
   if payloadStr, err := rollups.Hex2Str(payloadHex); err == nil {
     for route, handler := range this.RouteInspectHandlers {
       if result, ok := tryUri(route,payloadStr); ok {
+        if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Inspect Request:",result) }
         return handler.Handler.Handle(result),true
       }
     }
@@ -147,3 +151,17 @@ func isAlnum(ch byte) bool {
   match, _ := regexp.MatchString("[_a-zA-Z0-9]",string(ch))
 	return match
 }
+
+func (this *UriHandler) SetDebug() {this.Handler.SetDebug()}
+func (this *UriHandler) SetLogLevel(logLevel hdl.LogLevel) {this.Handler.SetLogLevel(logLevel)}
+func (this *UriHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleDefault(fnHandle)}
+func (this *UriHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleInspect(fnHandle)}
+func (this *UriHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleAdvance(fnHandle)}
+func (this *UriHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleRollupsFixedAddresses(fnHandle)}
+func (this *UriHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleFixedAddress(address,fnHandle)}
+func (this *UriHandler) SendNotice(payloadHex string) (uint64,error) {return this.Handler.SendNotice(payloadHex)}
+func (this *UriHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return this.Handler.SendVoucher(destination,payloadHex)}
+func (this *UriHandler) SendReport(payloadHex string) error {return this.Handler.SendReport(payloadHex)}
+func (this *UriHandler) SendException(payloadHex string) error {return this.Handler.SendException(payloadHex)}
+func (this *UriHandler) Run() error {return this.Handler.Run()}
+func (this *UriHandler) InitializeRollupsAddresses(currentNetwork string) error {return this.Handler.InitializeRollupsAddresses(currentNetwork)}

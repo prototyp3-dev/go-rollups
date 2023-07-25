@@ -87,7 +87,7 @@ func main() {
   jsonHandler.HandleAdvanceRoute("set", HandleSet)
   jsonHandler.HandleAdvanceRoute("get", HandleAdvanceGet)
 
-  uriHandler := urihandler.AddUriHandler(&jsonHandler.Handler)
+  uriHandler := urihandler.AddUriHandler(jsonHandler.Handler)
   uriHandler.HandleInspectRoute("/get/:key", HandleGet)
 
   uriHandler.HandleDefault(HandleWrongWay)

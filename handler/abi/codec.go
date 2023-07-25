@@ -7,7 +7,7 @@ import (
   "github.com/prototyp3-dev/go-rollups/rollups"
 
   "github.com/prototyp3-dev/go-rollups/abi"
-  crypto "github.com/umbracle/ethgo" //"github.com/ethereum/go-ethereum/crypto"
+  "github.com/umbracle/ethgo" //"github.com/ethereum/go-ethereum/crypto"
 )
 
 // // go-ethereum 
@@ -18,6 +18,29 @@ import (
 // https://ethereum.stackexchange.com/questions/117060/abi-decode-raw-types-with-go
 // https://github.com/umbracle/ethgo/blob/main/abi/abi_test.go
 // https://github.com/umbracle/ethgo/blob/main/keccak.go
+
+type Address = ethgo.Address //[20]byte
+
+func Address2Hex(bin Address) string {
+  return rollups.Bin2Hex(bin[:])
+}
+
+func Hex2Address(hexAddress string) (Address,error) {
+  addrBytes, err := rollups.Hex2Bin(hexAddress)
+  if err != nil {
+    return Address{}, fmt.Errorf("Hex2Address: Error converting address from hex")
+  }
+  return Bin2Address(addrBytes)
+}
+
+func Bin2Address(addrBytes []byte) (Address,error) {
+  if len(addrBytes) != 20 {
+    return Address{}, fmt.Errorf("Bin2Address: Wrong address length")
+  }
+  var addrArr [20]byte
+  copy(addrArr[:], addrBytes[:20])
+  return addrArr,nil
+}
 
 type Codec struct {
   Framework string
@@ -80,12 +103,12 @@ func NewHeaderCodec(framework string, method string, fields []string) *Codec {
 }
 
 func CodecHeader(framework string, method string, fields []string) string {
-  frameworkeccak := crypto.Keccak256([]byte(framework))
-  methodkeccak := crypto.Keccak256([]byte(method))
-  fieldskeccak := crypto.Keccak256([]byte("("+strings.Join(fields, ",")+")"))
+  frameworkeccak := ethgo.Keccak256([]byte(framework))
+  methodkeccak := ethgo.Keccak256([]byte(method))
+  fieldskeccak := ethgo.Keccak256([]byte("("+strings.Join(fields, ",")+")"))
   headerAllbytes := append(frameworkeccak, methodkeccak...)
   headerAllbytes = append(headerAllbytes, fieldskeccak...)
-  return rollups.Bin2Hex(crypto.Keccak256(headerAllbytes))
+  return rollups.Bin2Hex(ethgo.Keccak256(headerAllbytes))
 }
 
 func NewVoucherCodec(method string, fields []string) *Codec {
@@ -97,8 +120,8 @@ func NewVoucherCodec(method string, fields []string) *Codec {
 }
 
 func VoucherHeader(method string, fields []string) string {
-  headerKeccak := crypto.Keccak256([]byte(method+"("+strings.Join(fields, ",")+")"))
-  return rollups.Bin2Hex(crypto.Keccak256(headerKeccak[:4]))
+  headerKeccak := ethgo.Keccak256([]byte(method+"("+strings.Join(fields, ",")+")"))
+  return rollups.Bin2Hex(headerKeccak[:4])
 }
 func (this *Codec) Decode(payloadHex string) ([]interface{},error) {
 	var result []interface{}

@@ -26,7 +26,6 @@ func DecodePacked(t *abi.Type, input []byte) (interface{}, error) {
 }
 
 func decode(t *abi.Type, input []byte) (interface{}, []byte, error) {
-	fmt.Println(t,input)
 	var err error
 	var length int
 
@@ -57,7 +56,6 @@ func decode(t *abi.Type, input []byte) (interface{}, []byte, error) {
 		if t.Elem().Kind() == abi.KindInt || t.Elem().Kind() == abi.KindUInt {
 			eSize = eSize/8
 		}
-		fmt.Println("slice",length,eSize)
 		return decodeArraySlice(t, input, length/eSize)
 
 	case abi.KindArray:
@@ -92,7 +90,6 @@ func decode(t *abi.Type, input []byte) (interface{}, []byte, error) {
 		return nil, nil, fmt.Errorf("decoding not available for type '%s'", t.Kind())
 	}
 
-	fmt.Println(val, input[length:])
 	return val, input[length:], err
 }
 
@@ -195,7 +192,6 @@ func decodeTuple(t *abi.Type, data []byte) (interface{}, []byte, error) {
 }
 
 func decodeArraySlice(t *abi.Type, data []byte, size int) (interface{}, []byte, error) {
-	fmt.Println("decode array", t.Elem().Size(), size, len(data))
 	if size < 0 {
 		return nil, nil, fmt.Errorf("size is lower than zero")
 	}

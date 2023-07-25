@@ -24,7 +24,7 @@ type InspectMapHandler struct {
 }
 
 type JsonHandler struct {
-  hdl.Handler
+  Handler *hdl.Handler
   RouteKey string
   RouteAdvanceHandlers map[string]*AdvanceMapHandler
   RouteInspectHandlers map[string]*InspectMapHandler
@@ -39,9 +39,9 @@ func AddJsonHandler(routeKey string, handler *hdl.Handler) *JsonHandler {
 		panic("json handler: invalid route key")
 	}
 
-  h := JsonHandler{RouteKey: routeKey, Handler: *handler}
-  h.HandleAdvanceRoutes(h.jsonAdvanceHandler)
-  h.HandleInspectRoutes(h.jsonInspectHandler)
+  h := JsonHandler{RouteKey: routeKey, Handler: handler}
+  h.Handler.HandleAdvanceRoutes(h.jsonAdvanceHandler)
+  h.Handler.HandleInspectRoutes(h.jsonInspectHandler)
   return &h
 }
 
@@ -60,6 +60,7 @@ func (this *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHan
 	}
   fnHandler := AdvanceMapHandler{fnHandle}
   this.RouteAdvanceHandlers[route] = &fnHandler
+  if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Created JSON Advance route for",route) }
 }
 
 
@@ -78,6 +79,7 @@ func (this *JsonHandler) HandleInspectRoute(route string, fnHandle InspectMapHan
 	}
   fnHandler := InspectMapHandler{fnHandle}
   this.RouteInspectHandlers[route] = &fnHandler
+  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created JSON Inspect route for",route) }
 }
 
 func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interface{},bool) {
@@ -98,7 +100,7 @@ func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interfac
 func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
   if route,result, ok := this.getRoute(payloadHex); ok {
     if this.RouteAdvanceHandlers[route] != nil {
-      if this.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Received JSON route",route,"Advance Request:",result) }
+      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Advance Request:",result) }
       return this.RouteAdvanceHandlers[route].Handler.Handle(metadata,result),true
     }
   }
@@ -108,9 +110,24 @@ func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadH
 func (this *JsonHandler) jsonInspectHandler(payloadHex string) (error,bool) {
   if route,result, ok := this.getRoute(payloadHex); ok {
     if this.RouteInspectHandlers[route] != nil {
-      if this.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Received JSON route",route,"Inspect Request:",result) }
+      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Inspect Request:",result) }
       return this.RouteInspectHandlers[route].Handler.Handle(result),true
     }
   }
   return nil,false
 }
+
+
+func (this *JsonHandler) SetDebug() {this.Handler.SetDebug()}
+func (this *JsonHandler) SetLogLevel(logLevel hdl.LogLevel) {this.Handler.SetLogLevel(logLevel)}
+func (this *JsonHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleDefault(fnHandle)}
+func (this *JsonHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleInspect(fnHandle)}
+func (this *JsonHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleAdvance(fnHandle)}
+func (this *JsonHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleRollupsFixedAddresses(fnHandle)}
+func (this *JsonHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleFixedAddress(address,fnHandle)}
+func (this *JsonHandler) SendNotice(payloadHex string) (uint64,error) {return this.Handler.SendNotice(payloadHex)}
+func (this *JsonHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return this.Handler.SendVoucher(destination,payloadHex)}
+func (this *JsonHandler) SendReport(payloadHex string) error {return this.Handler.SendReport(payloadHex)}
+func (this *JsonHandler) SendException(payloadHex string) error {return this.Handler.SendException(payloadHex)}
+func (this *JsonHandler) Run() error {return this.Handler.Run()}
+func (this *JsonHandler) InitializeRollupsAddresses(currentNetwork string) error {return this.Handler.InitializeRollupsAddresses(currentNetwork)}

@@ -28,7 +28,6 @@ func EncodePacked(v interface{}, t *abi.Type) ([]byte, error) {
 }
 
 func encode(v reflect.Value, t *abi.Type) ([]byte, error) {
-	fmt.Println(v,t)
 	if v.Kind() == reflect.Interface {
 		v = v.Elem()
 	}
