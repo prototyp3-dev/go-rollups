@@ -6,16 +6,16 @@ import (
   "github.com/prototyp3-dev/go-rollups/rollups"
 )
 
-type AdvanceMapHandlerFunc func(*rollups.Metadata,[]interface{}) error
-func (f AdvanceMapHandlerFunc) Handle(m *rollups.Metadata,p []interface{}) error {
+type AdvanceMapHandlerFunc func(*rollups.Metadata,map[string]interface{}) error
+func (f AdvanceMapHandlerFunc) Handle(m *rollups.Metadata,p map[string]interface{}) error {
 	return f(m,p)
 }
 type AdvanceMapHandler struct {
   Handler AdvanceMapHandlerFunc 
 }
 
-type InspectMapHandlerFunc func([]interface{}) error
-func (f InspectMapHandlerFunc) Handle(p []interface{}) error {
+type InspectMapHandlerFunc func(map[string]interface{}) error
+func (f InspectMapHandlerFunc) Handle(p map[string]interface{}) error {
 	return f(p)
 }
 type InspectMapHandler struct {

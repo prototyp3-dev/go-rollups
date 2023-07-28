@@ -253,7 +253,7 @@ func (this *WalletApp) SetupRoutes(routes []WalletRoute) {
     case TransferErc721AdvanceRoute,TransferErc721CodecAdvanceRoute:
       this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Transfer",[]string{"address","address","uint256","bytes"}), this.TransferErc721Codec)
     case BalanceInspectRoute,BalanceCodecInspectRoute:
-      this.AbiHandler().HandleInspectRoute(abihandler.NewHeaderCodec("wallet","Balance",[]string{"address"}), this.BalanceCodec)
+      this.AbiHandler().HandleInspectRoute(abihandler.NewHeaderCodec("wallet","Balance",[]string{"address address"}), this.BalanceAbi)
     case BalanceUriInspectRoute:
       this.UriHandler().HandleInspectRoute("/balance/:address", this.BalanceUri)
     default:
@@ -269,8 +269,8 @@ func (this *WalletApp) SetupRoutes(routes []WalletRoute) {
 // Relay
 //
 
-func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  addr, ok1 := payloadSlice[0].(abihandler.Address)
+func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  addr, ok1 := payloadMap["0"].(abihandler.Address)
 
   if !ok1 {
     message := "HandleRelay: parameters error"
@@ -288,10 +288,10 @@ func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadSlice []in
 // Deposit
 //
 
-func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  depositor, ok1 := payloadSlice[0].(abihandler.Address)
-  amount, ok2 := payloadSlice[1].(*big.Int)
-  // dataBytes, ok3 := payloadSlice[2].([]byte)
+func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  depositor, ok1 := payloadMap["0"].(abihandler.Address)
+  amount, ok2 := payloadMap["1"].(*big.Int)
+  // dataBytes, ok3 := payloadMap["2"].([]byte)
 
   if !ok1 || !ok2 {
     message := "EtherPortalDeposit: parameters error"
@@ -322,13 +322,13 @@ func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadSli
   return nil
 }
 
-func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadSlice []interface{}) error {
+func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
 
-  // ret, ok1 := payloadSlice[0].(bool)
-  tokenAddress, ok2 := payloadSlice[1].(abihandler.Address)
-  depositor, ok3 := payloadSlice[2].(abihandler.Address)
-  amount, ok4 := payloadSlice[3].(*big.Int)
-  // dataBytes, ok5 := payloadSlice[4].([]byte)
+  // ret, ok1 := payloadMap["0"].(bool)
+  tokenAddress, ok2 := payloadMap["1"].(abihandler.Address)
+  depositor, ok3 := payloadMap["2"].(abihandler.Address)
+  amount, ok4 := payloadMap["3"].(*big.Int)
+  // dataBytes, ok5 := payloadMap["4"].([]byte)
 
   if !ok2 || !ok3 || !ok4 {
     message := "Erc20PortalDeposit: parameters error"
@@ -358,11 +358,11 @@ func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadSli
   return nil
 }
 
-func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  tokenAddress, ok1 := payloadSlice[0].(abihandler.Address)
-  depositor, ok2 := payloadSlice[1].(abihandler.Address)
-  tokenId, ok3 := payloadSlice[2].(*big.Int)
-  // dataBytes, ok4 := payloadSlice[3].([]byte)
+func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
+  depositor, ok2 := payloadMap["1"].(abihandler.Address)
+  tokenId, ok3 := payloadMap["2"].(*big.Int)
+  // dataBytes, ok4 := payloadMap["3"].([]byte)
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc721PortalDeposit: parameters error"
@@ -396,14 +396,14 @@ func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadSl
 // Withdraw
 //
 
-func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadSlice []interface{}) error {
+func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   if this.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("EtherWithdraw: Can not generate voucher as there is no dapp address configured")
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadSlice)}
-  amount, ok1 := payloadSlice[0].(*big.Int)
-  dataBytes, ok2 := payloadSlice[1].([]byte)
+  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
+  amount, ok1 := payloadMap["0"].(*big.Int)
+  dataBytes, ok2 := payloadMap["1"].([]byte)
 
   if !ok1 || !ok2 {
     message := "EtherWithdraw: parameters error"
@@ -448,11 +448,11 @@ func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadSlice []
   return nil
 }
 
-func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadSlice)}
-  tokenAddress, ok1 := payloadSlice[0].(abihandler.Address)
-  amount, ok2 := payloadSlice[1].(*big.Int)
-  dataBytes, ok3 := payloadSlice[2].([]byte)
+func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
+  tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
+  amount, ok2 := payloadMap["1"].(*big.Int)
+  dataBytes, ok3 := payloadMap["2"].([]byte)
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc20Withdraw: parameters error"
@@ -497,16 +497,16 @@ func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadSlice []
   return nil
 }
 
-func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc721Withdraw: payload:",payloadSlice)}
+func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc721Withdraw: payload:",payloadMap)}
 
   if this.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("Erc721Withdraw: Can not generate voucher as there is no dapp address configured")
   }
 
-  tokenAddress, ok1 := payloadSlice[0].(abihandler.Address)
-  tokenId, ok2 := payloadSlice[1].(*big.Int)
-  dataBytes, ok3 := payloadSlice[2].([]byte)
+  tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
+  tokenId, ok2 := payloadMap["1"].(*big.Int)
+  dataBytes, ok3 := payloadMap["2"].([]byte)
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc721Withdraw: parameters error"
@@ -555,10 +555,10 @@ func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadSlice [
 // Transfer
 //
 
-func (this *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  receiver, ok1 := payloadSlice[0].(abihandler.Address)
-  amount, ok2 := payloadSlice[1].(*big.Int)
-  // dataBytes, ok3 := payloadSlice[2].([]byte)
+func (this *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  receiver, ok1 := payloadMap["0"].(abihandler.Address)
+  amount, ok2 := payloadMap["1"].(*big.Int)
+  // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 {
     message := "TransferEtherCodec: parameters error"
     return fmt.Errorf(message)
@@ -614,11 +614,11 @@ func (this *WalletApp) TransferEther(sender abihandler.Address, receiver abihand
   return nil
 }
 
-func (this *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  tokenAddress, ok1 := payloadSlice[0].(abihandler.Address)
-  receiver, ok2 := payloadSlice[1].(abihandler.Address)
-  amount, ok3 := payloadSlice[2].(*big.Int)
-  // dataBytes, ok3 := payloadSlice[2].([]byte)
+func (this *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
+  receiver, ok2 := payloadMap["1"].(abihandler.Address)
+  amount, ok3 := payloadMap["2"].(*big.Int)
+  // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 {
     message := "TransferErec20Codec: parameters error"
     return fmt.Errorf(message)
@@ -674,11 +674,11 @@ func (this *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abi
   return nil
 }
 
-func (this *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  tokenAddress, ok1 := payloadSlice[0].(abihandler.Address)
-  receiver, ok2 := payloadSlice[1].(abihandler.Address)
-  tokenId, ok3 := payloadSlice[2].(*big.Int)
-  // dataBytes, ok3 := payloadSlice[2].([]byte)
+func (this *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
+  receiver, ok2 := payloadMap["1"].(abihandler.Address)
+  tokenId, ok3 := payloadMap["2"].(*big.Int)
+  // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 {
     message := "TransferErec721Codec: parameters error"
     return fmt.Errorf(message)
@@ -739,8 +739,8 @@ func (this *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender ab
 // Balance
 //
 
-func (this *WalletApp) BalanceCodec(payloadSlice []interface{}) error {
-  addr, ok1 := payloadSlice[0].(abihandler.Address)
+func (this *WalletApp) BalanceAbi(payloadMap map[string]interface{}) error {
+  addr, ok1 := payloadMap["address"].(abihandler.Address)
   if !ok1 {
     message := "Balance: parameters error"
     return fmt.Errorf(message)
@@ -774,5 +774,5 @@ func (this *WalletApp) BalanceUri(payloadMap map[string]interface{}) error {
     return fmt.Errorf("Balance: parameters error: %s", err)
   }
 
-  return this.BalanceCodec([]interface{}{addr})
+  return this.BalanceAbi(map[string]interface{}{"address":addr})
 }

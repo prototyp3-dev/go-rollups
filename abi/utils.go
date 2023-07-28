@@ -12,7 +12,9 @@ var (
 	bigIntT       = reflect.TypeOf(new(big.Int))
 )
 
-func isDynamicType(t *abi.Type) bool {
+type Type = abi.Type //[20]byte
+
+func isDynamicType(t *Type) bool {
 	if t.Kind() == abi.KindTuple {
 		for _, elem := range t.TupleElems() {
 			if isDynamicType(elem.Elem) {
@@ -25,11 +27,11 @@ func isDynamicType(t *abi.Type) bool {
 }
 
 // NewType parses a type in string format
-func NewType(s string) (*abi.Type, error) {
+func NewType(s string) (*Type, error) {
 	return abi.NewType(s)
 }
 
 // MustNewType parses a type in string format or panics if its invalid
-func MustNewType(s string) *abi.Type {
+func MustNewType(s string) *Type {
 	return abi.MustNewType(s)
 }

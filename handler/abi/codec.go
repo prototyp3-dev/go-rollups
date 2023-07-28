@@ -10,15 +10,6 @@ import (
   "github.com/umbracle/ethgo" //"github.com/ethereum/go-ethereum/crypto"
 )
 
-// // go-ethereum 
-// https://stackoverflow.com/questions/50772811/how-can-i-get-the-same-return-value-as-solidity-abi-encodepacked-in-golang
-// https://github.com/ethereum/go-ethereum/blob/master/accounts/abi/pack_test.go
-
-// // eth go
-// https://ethereum.stackexchange.com/questions/117060/abi-decode-raw-types-with-go
-// https://github.com/umbracle/ethgo/blob/main/abi/abi_test.go
-// https://github.com/umbracle/ethgo/blob/main/keccak.go
-
 type Address = ethgo.Address //[20]byte
 
 func Address2Hex(bin Address) string {
@@ -48,9 +39,10 @@ type Codec struct {
   Header string
   PackedFields []string
   Fields []string
+  typ *abi.Type
 }
 
-func (c *Codec) String() string {
+func (c Codec) String() string {
   atts := make([]string,0)
   if c.Header != "" && c.Framework != "" &&c.Method != "" {
     atts = append(atts, fmt.Sprintf("Header(%s)",c.Header))
@@ -67,17 +59,14 @@ func (c *Codec) String() string {
 }
 
 func NewPackedCodec(fields []string) *Codec {
-  typ := abi.MustNewType("tuple("+ strings.Join(fields, ",") +")")
-  var cleanFields []string
-  for _, elem := range typ.TupleElems() {
-    cleanFields = append(cleanFields, elem.Elem.String())
-  }
-  return &Codec{PackedFields: cleanFields}
+  typ := GetType(fields)
+  return &Codec{PackedFields: fields, typ: typ}
 }
 
 func NewHeaderPackedCodec(framework string, method string, fields []string) *Codec {
   codec := NewPackedCodec(fields)
-  header := CodecHeader(framework, method, codec.PackedFields)
+  cleanFields := CleanFields(codec.typ)
+  header := CodecHeader(framework, method, cleanFields)
   codec.Header = header
   codec.Framework = framework
   codec.Method = method
@@ -85,21 +74,30 @@ func NewHeaderPackedCodec(framework string, method string, fields []string) *Cod
 }
 
 func NewCodec(fields []string) *Codec {
-  typ := abi.MustNewType("tuple("+ strings.Join(fields, ",") +")")
-  var cleanFields []string
-  for _, elem := range typ.TupleElems() {
-    cleanFields = append(cleanFields, elem.Elem.String())
-  }
-  return &Codec{Fields: cleanFields}
+  typ := GetType(fields)
+  return &Codec{Fields: fields, typ: typ}
 }
 
 func NewHeaderCodec(framework string, method string, fields []string) *Codec {
   codec := NewCodec(fields)
-  header := CodecHeader(framework, method, codec.Fields)
+  cleanFields := CleanFields(codec.typ)
+  header := CodecHeader(framework, method, cleanFields)
   codec.Header = header
   codec.Framework = framework
   codec.Method = method
   return codec
+}
+
+func GetType(fields []string) *abi.Type {
+  return abi.MustNewType("tuple("+ strings.Join(fields, ",") +")")
+}
+
+func CleanFields(typ *abi.Type) []string {
+  var cleanFields []string
+  for _, elem := range typ.TupleElems() {
+    cleanFields = append(cleanFields, elem.Elem.String())
+  }
+  return cleanFields
 }
 
 func CodecHeader(framework string, method string, fields []string) string {
@@ -123,8 +121,8 @@ func VoucherHeader(method string, fields []string) string {
   headerKeccak := ethgo.Keccak256([]byte(method+"("+strings.Join(fields, ",")+")"))
   return rollups.Bin2Hex(headerKeccak[:4])
 }
-func (this *Codec) Decode(payloadHex string) ([]interface{},error) {
-	var result []interface{}
+func (this *Codec) Decode(payloadHex string) (map[string]interface{},error) {
+	var result map[string]interface{}
   payloadBytes, err := rollups.Hex2Bin(payloadHex)
   if err != nil {
     return result,fmt.Errorf("Decode: %s", err)
@@ -146,17 +144,17 @@ func (this *Codec) Decode(payloadHex string) ([]interface{},error) {
   if len(fields) == 0 {
     return result,nil
   }
-  tupleFields := make([]string,0)
-  for i := 0; i < len(fields); i += 1 {
-    tupleFields = append(tupleFields,fmt.Sprintf("%s f%d",fields[i],i))
-  }
-  typ, _ := abi.NewType("tuple("+ strings.Join(tupleFields, ",") +")")
+  // tupleFields := make([]string,0)
+  // for i := 0; i < len(fields); i += 1 {
+  //   tupleFields = append(tupleFields,fmt.Sprintf("%s f%d",fields[i],i))
+  // }
+  // typ, _ := abi.NewType("tuple("+ strings.Join(tupleFields, ",") +")")
 
   var decoded interface{}
   if this.PackedFields != nil {
-    decoded,err = abi.DecodePacked(typ, payloadBytes)
+    decoded,err = abi.DecodePacked(this.typ, payloadBytes)
   } else if this.Fields != nil {
-    decoded,err = abi.Decode(typ, payloadBytes)
+    decoded,err = abi.Decode(this.typ, payloadBytes)
   }
   if err != nil {
     return result,fmt.Errorf("Decode: %s",err)
@@ -166,15 +164,16 @@ func (this *Codec) Decode(payloadHex string) ([]interface{},error) {
   if !ok {
     return result,fmt.Errorf("Convert decoded payload to map error")
   }
-  result = make([]interface{},len(mapResult))
-  for i := 0; i < len(mapResult); i += 1 {
-    key := fmt.Sprintf("f%d",i)
-    result[i] = mapResult[key]
-  }
-  return result,nil
+  // result = make([]interface{},len(mapResult))
+  // for i := 0; i < len(mapResult); i += 1 {
+  //   key := fmt.Sprintf("f%d",i)
+  //   result[i] = mapResult[key]
+  // }
+
+  return mapResult,nil
 }
 
-func (this *Codec) Encode(payloadSlice []interface{}) (string,error) {
+func (this *Codec) Encode(payload interface{}) (string,error) {
 	var result string
 
   var fields []string
@@ -184,18 +183,30 @@ func (this *Codec) Encode(payloadSlice []interface{}) (string,error) {
     fields = this.Fields
   }
 
-  if len(fields) != len(payloadSlice) {
-    return result,fmt.Errorf("Encode: Wrong values length")
-  }
+  var payloadMap map[string]interface{}
+  typ := this.typ
 
-  tupleFields := make([]string,0)
-  payloadMap := make(map[string]interface{})
-  for i := 0; i < len(fields); i += 1 {
-    key := fmt.Sprintf("f%d",i)
-    tupleFields = append(tupleFields,fmt.Sprintf("%s %s",fields[i],key))
-    payloadMap[key] = payloadSlice[i]
+  payloadSlice, ok := payload.([]interface{})
+  if ok {
+    if len(fields) != len(payloadSlice) {
+      return result,fmt.Errorf("Encode: Wrong values length")
+    }
+    
+    tupleFields := make([]string,0)
+    payloadMap = make(map[string]interface{})
+    for i := 0; i < len(fields); i += 1 {
+      key := fmt.Sprintf("f%d",i)
+      tupleFields = append(tupleFields,fmt.Sprintf("%s %s",fields[i],key))
+      payloadMap[key] = payloadSlice[i]
+    }
+    typ, _ = abi.NewType("tuple("+ strings.Join(tupleFields, ",") +")")
+  
+  } else {
+    payloadMap, ok = payload.(map[string]interface{})
+    if !ok {
+      return result,fmt.Errorf("Encode: Wrong payload")
+    }
   }
-  typ, _ := abi.NewType("tuple("+ strings.Join(tupleFields, ",") +")")
 
   var encoded []byte
   var err error

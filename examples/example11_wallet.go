@@ -29,8 +29,8 @@ func (this *MyApp) GetPayedFee(addr abihandler.Address) *big.Int {
   return this.feesMap[addr]
 }
 
-func (this *MyApp) PayFee(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  infolog.Println("Route: PayFee, payload:",payloadSlice)
+func (this *MyApp) PayFee(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  infolog.Println("Route: PayFee, payload:",payloadMap)
   
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
   if err != nil {
@@ -53,9 +53,9 @@ func (this *MyApp) PayFee(metadata *rollups.Metadata, payloadSlice []interface{}
   return nil
 }
 
-func (this *MyApp) ChangeFee(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  infolog.Println("Route: ChangeFee, payload:",payloadSlice)
-  newFee, ok1 := payloadSlice[0].(*big.Int)
+func (this *MyApp) ChangeFee(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  infolog.Println("Route: ChangeFee, payload:",payloadMap)
+  newFee, ok1 := payloadMap["fee"].(*big.Int)
   
   if !ok1 {
     message := "ChangeFee: parameters error"
@@ -82,12 +82,12 @@ func (this *MyApp) GetFeeUri(payloadMap map[string]interface{}) error {
     return fmt.Errorf("GetFee: parameters error: %s", err)
   }
 
-  return this.GetFee([]interface{}{addr})
+  return this.GetFee(map[string]interface{}{"address":addr})
 }
 
-func (this *MyApp) GetFee(payloadSlice []interface{}) error {
-  infolog.Println("Route: GetFee, payload:",payloadSlice)
-  addr, ok1 := payloadSlice[0].(abihandler.Address)
+func (this *MyApp) GetFee(payloadMap map[string]interface{}) error {
+  infolog.Println("Route: GetFee, payload:",payloadMap)
+  addr, ok1 := payloadMap["address"].(abihandler.Address)
   
   if !ok1 {
     message := "GetFee: parameters error"
@@ -155,8 +155,8 @@ func main() {
     wallet.BalanceInspectRoute,wallet.BalanceUriInspectRoute})
 
   appHandler.HandleAdvanceRoute(abihandler.NewHeaderCodec("dapp","fee",[]string{}), myApp.PayFee)
-  appHandler.HandleFixedAddressAdvance(abihandler.Address2Hex(developerAddress),abihandler.NewHeaderCodec("dapp","changeFee",[]string{"uint256"}), myApp.ChangeFee)
-  appHandler.HandleInspectRoute(abihandler.NewHeaderCodec("dapp","fee",[]string{"address"}), myApp.GetFee)
+  appHandler.HandleFixedAddressAdvance(abihandler.Address2Hex(developerAddress),abihandler.NewHeaderCodec("dapp","changeFee",[]string{"uint256 fee"}), myApp.ChangeFee)
+  appHandler.HandleInspectRoute(abihandler.NewHeaderCodec("dapp","fee",[]string{"address address"}), myApp.GetFee)
   myApp.dappWallet.UriHandler().HandleInspectRoute("/fee/:address", myApp.GetFeeUri)
   
   appHandler.HandleDefault(myApp.HandleWrongWay)

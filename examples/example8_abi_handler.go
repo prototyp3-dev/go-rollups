@@ -15,13 +15,13 @@ var valuesMap map[string]string
 
 var noticeCodec *abihandler.Codec
 
-func HandleAdvanceGet(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  return HandleGet(payloadSlice)
+func HandleAdvanceGet(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  return HandleGet(payloadMap)
 }
 
-func HandleGet(payloadSlice []interface{}) error {
-  infolog.Println("Route: get, payload:",payloadSlice)
-  key, ok := payloadSlice[0].(string)
+func HandleGet(payloadMap map[string]interface{}) error {
+  infolog.Println("Route: get, payload:",payloadMap)
+  key, ok := payloadMap["0"].(string)
 
   if !ok || key == "" {
     message := "HandleGet: Not enough parameters, you must provide " + key
@@ -53,10 +53,10 @@ func HandleWrongWay(payloadHex string) error {
   return fmt.Errorf(message)
 }
 
-func HandleSet(metadata *rollups.Metadata, payloadSlice []interface{}) error {
-  infolog.Println("Route: set, payload:",payloadSlice)
-  key, okKey := payloadSlice[0].(string)
-  value, okVal := payloadSlice[1].(string)
+func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  infolog.Println("Route: set, payload:",payloadMap)
+  key, okKey := payloadMap["key"].(string)
+  value, okVal := payloadMap["value"].(string)
 
   if !okKey || !okVal || key == "" || value == "" {
     message := "HandleSet: Not enough parameters, you must provide string 'key' and 'value'"
@@ -96,7 +96,7 @@ func main() {
 
   noticeCodec = abihandler.NewCodec([]string{"uint","string","string"})
 
-  setCodec := abihandler.NewHeaderCodec("dapp","set",[]string{"string","string"})
+  setCodec := abihandler.NewHeaderCodec("dapp","set",[]string{"string key","string value"})
   handler.HandleAdvanceRoute(setCodec, HandleSet)
 
   getCodec := abihandler.NewHeaderCodec("dapp","get",[]string{"string"})

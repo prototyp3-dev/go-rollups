@@ -76,8 +76,6 @@ func HandleWrongWay(payloadHex string) error {
   return fmt.Errorf(message)
 }
 
-// var dappWallet wallet.wallet
-
 func main() {
   valuesMap = make(map[string]string)
 
