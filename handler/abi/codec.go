@@ -6,7 +6,7 @@ import (
 
   "github.com/prototyp3-dev/go-rollups/rollups"
 
-  "github.com/prototyp3-dev/go-rollups/abi"
+  "github.com/lynoferraz/abigo"
   "github.com/umbracle/ethgo" //"github.com/ethereum/go-ethereum/crypto"
 )
 

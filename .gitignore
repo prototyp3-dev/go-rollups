@@ -1,3 +1,4 @@
 .sunodo
 examples/go.mod
+examples/go.sum
 examples/example.go
