@@ -1,7 +1,7 @@
 # Cartesi Rollups GO high level framework
 
 ```
-This works for Cartesi Rollups version 0.9.x
+This works for Cartesi Rollups version 1.0.x
 ```
 
 Create cartesi rolllups DApp with codes like:

@@ -76,6 +76,50 @@ func HandleErc721(metadata *rollups.Metadata, payloadHex string) error {
   return nil
 }
 
+func HandleErc1155Single(metadata *rollups.Metadata, payloadHex string) error {
+  deposit, err := rollups.DecodeErc1155SingleDeposit(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleErc1155Single: error decoding deposit:", err)
+  }
+
+  infolog.Println("Received ",deposit.Amount,"tokens of id",deposit.TokenId,deposit.TokenAddress,"Erc1155 Single deposit from",deposit.Depositor,"base layer data:",string(deposit.BaseLayerData),"and exec layer data:",string(deposit.ExecLayerData))
+
+  if dappAddress != "" {
+    voucher := rollups.Erc1155SafeTransferFromVoucher(dappAddress, deposit.Depositor, deposit.TokenAddress, deposit.TokenId, deposit.Amount, make([]byte,0))
+    infolog.Println("Sending voucher destination",voucher.Destination,"payload",voucher.Payload)
+    res, err := rollups.SendVoucher(&voucher)
+    if err != nil {
+      return fmt.Errorf("HandleErc721: error making http request: %s", err)
+    }
+    infolog.Println("Received voucher status", strconv.Itoa(res.StatusCode))
+  } else {
+    infolog.Println("Can't generate voucher as there is no dapp address configured")
+  }
+  return nil
+}
+
+func HandleErc1155Batch(metadata *rollups.Metadata, payloadHex string) error {
+  deposit, err := rollups.DecodeErc1155BatchDeposit(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleErc1155Batch: error decoding deposit:", err)
+  }
+
+  infolog.Println("Received ",deposit.Amounts,"amounts of ids",deposit.TokenIds,deposit.TokenAddress,"Erc1155 Batch deposit from",deposit.Depositor,"base layer data:",string(deposit.BaseLayerData),"and exec layer data:",string(deposit.ExecLayerData))
+
+  if dappAddress != "" {
+    voucher := rollups.Erc1155SafeBatchTransferFromVoucher(dappAddress, deposit.Depositor, deposit.TokenAddress, deposit.TokenIds, deposit.Amounts, make([]byte,0))
+    infolog.Println("Sending voucher destination",voucher.Destination,"payload",voucher.Payload)
+    res, err := rollups.SendVoucher(&voucher)
+    if err != nil {
+      return fmt.Errorf("HandleErc721: error making http request: %s", err)
+    }
+    infolog.Println("Received voucher status", strconv.Itoa(res.StatusCode))
+  } else {
+    infolog.Println("Can't generate voucher as there is no dapp address configured")
+  }
+  return nil
+}
+
 func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
   infolog.Println("Dapp Relay, sender is",metadata.MsgSender,"and the my address is", payloadHex)
   dappAddress = payloadHex
@@ -95,6 +139,8 @@ func main() {
   handler.HandleFixedAddress(handler.RollupsAddresses.EtherPortalAddress, HandleEther)
   handler.HandleFixedAddress(handler.RollupsAddresses.Erc20PortalAddress, HandleErc20)
   handler.HandleFixedAddress(handler.RollupsAddresses.Erc721PortalAddress, HandleErc721)
+  handler.HandleFixedAddress(handler.RollupsAddresses.Erc1155SinglePortalAddress, HandleErc1155Single)
+  handler.HandleFixedAddress(handler.RollupsAddresses.Erc1155BatchPortalAddress, HandleErc1155Batch)
 
   err := handler.RunDebug()
   if err != nil {
