@@ -43,3 +43,12 @@ func PadBytes(bin []byte,size int) []byte {
   return tmp
 }
 
+func PadBytesLeft(bin []byte,size int) []byte {
+  return PadBytes(bin,size)
+}
+
+func PadBytesRight(bin []byte,size int) []byte {
+  tmp := make([]byte, size)
+  copy(tmp[:size], bin)
+  return tmp
+}
