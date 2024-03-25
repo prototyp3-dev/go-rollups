@@ -39,48 +39,48 @@ func AddUriHandler(handler *hdl.Handler) *UriHandler {
   return &h
 }
 
-func (this *UriHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
+func (h *UriHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("uri handler: nil handler")
 	}
 	if route == "" {
 		panic("uri handler: invalid route")
 	}
-  if this.RouteAdvanceHandlers == nil {
-    this.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
+  if h.RouteAdvanceHandlers == nil {
+    h.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
   }
-	if this.RouteAdvanceHandlers[route] != nil {
+	if h.RouteAdvanceHandlers[route] != nil {
 		panic("uri handler: route already added")
 	}
   fnHandler := AdvanceMapHandler{fnHandle}
-  this.RouteAdvanceHandlers[route] = &fnHandler
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Advance route for",route) }
+  h.RouteAdvanceHandlers[route] = &fnHandler
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Advance route for",route) }
 }
 
 
-func (this *UriHandler) HandleInspectRoute(route string, fnHandle InspectMapHandlerFunc) {
+func (h *UriHandler) HandleInspectRoute(route string, fnHandle InspectMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("uri handler: nil handler")
 	}
 	if route == "" {
 		panic("uri handler: invalid route")
 	}
-  if this.RouteInspectHandlers == nil {
-    this.RouteInspectHandlers = make(map[string]*InspectMapHandler)
+  if h.RouteInspectHandlers == nil {
+    h.RouteInspectHandlers = make(map[string]*InspectMapHandler)
   }
-	if this.RouteInspectHandlers[route] != nil {
+	if h.RouteInspectHandlers[route] != nil {
 		panic("uri handler: route already added")
 	}
   fnHandler := InspectMapHandler{fnHandle}
-  this.RouteInspectHandlers[route] = &fnHandler
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Inspect route for",route) }
+  h.RouteInspectHandlers[route] = &fnHandler
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created URI Inspect route for",route) }
 }
 
-func (this *UriHandler) uriAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
+func (h *UriHandler) uriAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
   if payloadStr, err := rollups.Hex2Str(payloadHex); err == nil {
-    for route, handler := range this.RouteAdvanceHandlers {
+    for route, handler := range h.RouteAdvanceHandlers {
       if result, ok := tryUri(route,payloadStr); ok {
-        if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Advance Request:",result) }
+        if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Advance Request:",result) }
         return handler.Handler.Handle(metadata,result),true
       }
     }
@@ -88,11 +88,11 @@ func (this *UriHandler) uriAdvanceHandler(metadata *rollups.Metadata, payloadHex
   return nil,false
 }
 
-func (this *UriHandler) uriInspectHandler(payloadHex string) (error,bool) {
+func (h *UriHandler) uriInspectHandler(payloadHex string) (error,bool) {
   if payloadStr, err := rollups.Hex2Str(payloadHex); err == nil {
-    for route, handler := range this.RouteInspectHandlers {
+    for route, handler := range h.RouteInspectHandlers {
       if result, ok := tryUri(route,payloadStr); ok {
-        if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Inspect Request:",result) }
+        if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received URI route",route,"Inspect Request:",result) }
         return handler.Handler.Handle(result),true
       }
     }
@@ -152,16 +152,16 @@ func isAlnum(ch byte) bool {
 	return match
 }
 
-func (this *UriHandler) SetDebug() {this.Handler.SetDebug()}
-func (this *UriHandler) SetLogLevel(logLevel hdl.LogLevel) {this.Handler.SetLogLevel(logLevel)}
-func (this *UriHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleDefault(fnHandle)}
-func (this *UriHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleInspect(fnHandle)}
-func (this *UriHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleAdvance(fnHandle)}
-func (this *UriHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleRollupsFixedAddresses(fnHandle)}
-func (this *UriHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleFixedAddress(address,fnHandle)}
-func (this *UriHandler) SendNotice(payloadHex string) (uint64,error) {return this.Handler.SendNotice(payloadHex)}
-func (this *UriHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return this.Handler.SendVoucher(destination,payloadHex)}
-func (this *UriHandler) SendReport(payloadHex string) error {return this.Handler.SendReport(payloadHex)}
-func (this *UriHandler) SendException(payloadHex string) error {return this.Handler.SendException(payloadHex)}
-func (this *UriHandler) Run() error {return this.Handler.Run()}
-func (this *UriHandler) InitializeRollupsAddresses(currentNetwork string) error {return this.Handler.InitializeRollupsAddresses(currentNetwork)}
+func (h *UriHandler) SetDebug() {h.Handler.SetDebug()}
+func (h *UriHandler) SetLogLevel(logLevel hdl.LogLevel) {h.Handler.SetLogLevel(logLevel)}
+func (h *UriHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleDefault(fnHandle)}
+func (h *UriHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleInspect(fnHandle)}
+func (h *UriHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleAdvance(fnHandle)}
+func (h *UriHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
+func (h *UriHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
+func (h *UriHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
+func (h *UriHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *UriHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
+func (h *UriHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
+func (h *UriHandler) Run() error {return h.Handler.Run()}
+func (h *UriHandler) InitializeRollupsAddresses(currentNetwork string) error {return h.Handler.InitializeRollupsAddresses(currentNetwork)}

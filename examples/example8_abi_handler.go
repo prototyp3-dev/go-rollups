@@ -25,7 +25,7 @@ func HandleGet(payloadMap map[string]interface{}) error {
 
   if !ok || key == "" {
     message := "HandleGet: Not enough parameters, you must provide " + key
-    report := rollups.Report{rollups.Str2Hex(message)}
+    report := rollups.Report{Payload: rollups.Str2Hex(message)}
     _, err := rollups.SendReport(&report)
     if err != nil {
       return fmt.Errorf("HandleGet: error making http request: %s", err)
@@ -34,7 +34,7 @@ func HandleGet(payloadMap map[string]interface{}) error {
   }
 
   value := valuesMap[key]
-  report := rollups.Report{rollups.Str2Hex(fmt.Sprint("Value of ",key," is ",value))}
+  report := rollups.Report{Payload: rollups.Str2Hex(fmt.Sprint("Value of ",key," is ",value))}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleGet: error making http request: %s", err)
@@ -45,7 +45,7 @@ func HandleGet(payloadMap map[string]interface{}) error {
 
 func HandleWrongWay(payloadHex string) error {
   message := "Unrecognized input, you should send a valid input"
-  report := rollups.Report{rollups.Str2Hex(message)}
+  report := rollups.Report{Payload: rollups.Str2Hex(message)}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleWrongWay: error making http request: %s", err)
@@ -60,7 +60,7 @@ func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) er
 
   if !okKey || !okVal || key == "" || value == "" {
     message := "HandleSet: Not enough parameters, you must provide string 'key' and 'value'"
-    report := rollups.Report{rollups.Str2Hex(message)}
+    report := rollups.Report{Payload: rollups.Str2Hex(message)}
     _, err := rollups.SendReport(&report)
     if err != nil {
       return fmt.Errorf("HandleSet: error making http request: %s", err)
@@ -69,7 +69,7 @@ func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) er
   }
   valuesMap[key] = value
 
-  report := rollups.Report{rollups.Str2Hex(fmt.Sprint("Value ",value," set for ",key))}
+  report := rollups.Report{Payload: rollups.Str2Hex(fmt.Sprint("Value ",value," set for ",key))}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleSet: error making http request: %s", err)
@@ -79,7 +79,7 @@ func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) er
   if err != nil {
     return fmt.Errorf("HandleSet: encoding notice: %s", err)
   }
-  notice := rollups.Notice{noticePayload}
+  notice := rollups.Notice{Payload: noticePayload}
   _, err = rollups.SendNotice(&notice)
   if err != nil {
     return fmt.Errorf("HandleSet: error making http request: %s", err)

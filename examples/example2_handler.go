@@ -12,7 +12,7 @@ import (
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
 
 func Handle(payload string) error {
-  report := rollups.Report{payload}
+  report := rollups.Report{Payload: payload}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("Handle: error making http request: %s", err)

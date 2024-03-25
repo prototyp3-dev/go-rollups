@@ -25,131 +25,131 @@ type Wallet struct {
   Erc1155 map[abihandler.Address]map[[32]byte]*big.Int  `json:"erc1155"`
 }
 
-func (this *Wallet) MarshalJSON() ([]byte, error) {
+func (w *Wallet) MarshalJSON() ([]byte, error) {
   erc72iMap := make(map[abihandler.Address][]*big.Int)
-  for a, _ := range this.Erc721 {
-    erc72iMap[a] = this.Erc721TokenIdList(a)
+  for a := range w.Erc721 {
+    erc72iMap[a] = w.Erc721TokenIdList(a)
   }
   erc1155Map := make(map[abihandler.Address][2][]*big.Int)
-  for a, _ := range this.Erc1155 {
-    erc1155Map[a] = this.Erc1155TokenIdList(a)
+  for a := range w.Erc1155 {
+    erc1155Map[a] = w.Erc1155TokenIdList(a)
   }
   return json.Marshal(struct{
     Ether *big.Int                                `json:"ether"`
     Erc20 map[abihandler.Address]*big.Int         `json:"erc20"`
     Erc721 map[abihandler.Address][]*big.Int      `json:"erc721"`
     Erc1155 map[abihandler.Address][2][]*big.Int  `json:"erc1155"`
-  }{Ether: this.Ether, Erc20:this.Erc20, Erc721:erc72iMap, Erc1155:erc1155Map})
+  }{Ether: w.Ether, Erc20:w.Erc20, Erc721:erc72iMap, Erc1155:erc1155Map})
 }
 
-func (this *Wallet) Erc721TokenIdList(tokenAddres abihandler.Address) []*big.Int {
+func (w *Wallet) Erc721TokenIdList(tokenAddres abihandler.Address) []*big.Int {
   idList := make([]*big.Int,0)
-  for tokenIdBytes, _ := range this.Erc721[tokenAddres] {
+  for tokenIdBytes := range w.Erc721[tokenAddres] {
     idList = append(idList,new(big.Int).SetBytes(tokenIdBytes[:]))
   }
   return idList
 }
 
-func (this *Wallet) Erc1155TokenIdList(tokenAddres abihandler.Address) [2][]*big.Int {
+func (w *Wallet) Erc1155TokenIdList(tokenAddres abihandler.Address) [2][]*big.Int {
   var idAmountList [2][]*big.Int
   idAmountList[0] = make([]*big.Int,0)
   idAmountList[1] = make([]*big.Int,0)
-  for tokenIdBytes, amount := range this.Erc1155[tokenAddres] {
+  for tokenIdBytes, amount := range w.Erc1155[tokenAddres] {
     idAmountList[0] = append(idAmountList[0],new(big.Int).SetBytes(tokenIdBytes[:]))
     idAmountList[1] = append(idAmountList[1],amount)
   }
   return idAmountList
 }
 
-func (this *Wallet) DepositEther(amount *big.Int) error {
-  this.Ether.Add(this.Ether,amount)
+func (w *Wallet) DepositEther(amount *big.Int) error {
+  w.Ether.Add(w.Ether,amount)
   return nil
 }
 
-func (this *Wallet) DepositErc20(tokenAddress abihandler.Address, amount *big.Int) error {
-  if this.Erc20[tokenAddress] == nil {
-    this.Erc20[tokenAddress] = new(big.Int)
+func (w *Wallet) DepositErc20(tokenAddress abihandler.Address, amount *big.Int) error {
+  if w.Erc20[tokenAddress] == nil {
+    w.Erc20[tokenAddress] = new(big.Int)
   }
-  this.Erc20[tokenAddress].Add(this.Erc20[tokenAddress],amount)
+  w.Erc20[tokenAddress].Add(w.Erc20[tokenAddress],amount)
   return nil
 }
 
-func (this *Wallet) DepositErc721(tokenAddress abihandler.Address, tokenId *big.Int) error {
-  if this.Erc721[tokenAddress] == nil {
-    this.Erc721[tokenAddress] = make(map[[32]byte]struct{})
+func (w *Wallet) DepositErc721(tokenAddress abihandler.Address, tokenId *big.Int) error {
+  if w.Erc721[tokenAddress] == nil {
+    w.Erc721[tokenAddress] = make(map[[32]byte]struct{})
   }
   var tokenIdBytes [32]byte
-  buf := make([]byte,32,32)
+  buf := make([]byte,32)
   buf = tokenId.FillBytes(buf)
   copy(tokenIdBytes[:],buf[:32])
-  if _, ok := this.Erc721[tokenAddress][tokenIdBytes]; ok {
+  if _, ok := w.Erc721[tokenAddress][tokenIdBytes]; ok {
     return fmt.Errorf("Wallet already has id %d for erc721(%s)",tokenId,tokenAddress)
   }
-  this.Erc721[tokenAddress][tokenIdBytes] = struct{}{}
+  w.Erc721[tokenAddress][tokenIdBytes] = struct{}{}
   return nil
 }
 
-func (this *Wallet) DepositErc1155(tokenAddress abihandler.Address, tokenId *big.Int, amount *big.Int) error {
-  if this.Erc1155[tokenAddress] == nil {
-    this.Erc1155[tokenAddress] = make(map[[32]byte]*big.Int)
+func (w *Wallet) DepositErc1155(tokenAddress abihandler.Address, tokenId *big.Int, amount *big.Int) error {
+  if w.Erc1155[tokenAddress] == nil {
+    w.Erc1155[tokenAddress] = make(map[[32]byte]*big.Int)
   }
   var tokenIdBytes [32]byte
-  buf := make([]byte,32,32)
+  buf := make([]byte,32)
   buf = tokenId.FillBytes(buf)
   copy(tokenIdBytes[:],buf[:32])
-  if _, ok := this.Erc1155[tokenAddress][tokenIdBytes]; !ok {
-    this.Erc1155[tokenAddress][tokenIdBytes] = new(big.Int)
+  if _, ok := w.Erc1155[tokenAddress][tokenIdBytes]; !ok {
+    w.Erc1155[tokenAddress][tokenIdBytes] = new(big.Int)
   }
-  this.Erc1155[tokenAddress][tokenIdBytes].Add(this.Erc1155[tokenAddress][tokenIdBytes],amount)
+  w.Erc1155[tokenAddress][tokenIdBytes].Add(w.Erc1155[tokenAddress][tokenIdBytes],amount)
   return nil
 }
 
-func (this *Wallet) WithdrawEther(amount *big.Int) error {
-  if this.Ether.Cmp(amount) == -1 {
+func (w *Wallet) WithdrawEther(amount *big.Int) error {
+  if w.Ether.Cmp(amount) == -1 {
     return fmt.Errorf("Wallet has insufficient ether funds")
   }
-  this.Ether.Sub(this.Ether,amount)
+  w.Ether.Sub(w.Ether,amount)
   return nil
 }
 
-func (this *Wallet) WithdrawErc20(tokenAddress abihandler.Address, amount *big.Int) error {
-  if this.Erc20[tokenAddress] == nil || this.Erc20[tokenAddress].Cmp(amount) == -1 {
+func (w *Wallet) WithdrawErc20(tokenAddress abihandler.Address, amount *big.Int) error {
+  if w.Erc20[tokenAddress] == nil || w.Erc20[tokenAddress].Cmp(amount) == -1 {
     return fmt.Errorf("Wallet has insufficient erc20(%s) funds",tokenAddress)
   }
-  this.Erc20[tokenAddress].Sub(this.Erc20[tokenAddress],amount)
+  w.Erc20[tokenAddress].Sub(w.Erc20[tokenAddress],amount)
   return nil
 }
 
-func (this *Wallet) WithdrawErc721(tokenAddress abihandler.Address, tokenId *big.Int) error {
-  if this.Erc721[tokenAddress] == nil {
+func (w *Wallet) WithdrawErc721(tokenAddress abihandler.Address, tokenId *big.Int) error {
+  if w.Erc721[tokenAddress] == nil {
     return fmt.Errorf("Wallet doesn't have any id for erc721(%s)",tokenAddress)
   }
   var tokenIdBytes [32]byte
-  buf := make([]byte,32,32)
+  buf := make([]byte,32)
   buf = tokenId.FillBytes(buf)
   copy(tokenIdBytes[:],buf[:32])
-  if _, ok := this.Erc721[tokenAddress][tokenIdBytes]; !ok {
+  if _, ok := w.Erc721[tokenAddress][tokenIdBytes]; !ok {
     return fmt.Errorf("Wallet doesn't have id %d for erc721(%s)",tokenId,tokenAddress)
   }
-  delete(this.Erc721[tokenAddress],tokenIdBytes)
+  delete(w.Erc721[tokenAddress],tokenIdBytes)
   return nil
 }
 
-func (this *Wallet) WithdrawErc1155(tokenAddress abihandler.Address, tokenId *big.Int, amount *big.Int) error {
-  if this.Erc1155[tokenAddress] == nil {
+func (w *Wallet) WithdrawErc1155(tokenAddress abihandler.Address, tokenId *big.Int, amount *big.Int) error {
+  if w.Erc1155[tokenAddress] == nil {
     return fmt.Errorf("Wallet doesn't have any id for erc1155%s)",tokenAddress)
   }
   var tokenIdBytes [32]byte
-  buf := make([]byte,32,32)
+  buf := make([]byte,32)
   buf = tokenId.FillBytes(buf)
   copy(tokenIdBytes[:],buf[:32])
-  if _, ok := this.Erc1155[tokenAddress][tokenIdBytes]; !ok {
+  if _, ok := w.Erc1155[tokenAddress][tokenIdBytes]; !ok {
     return fmt.Errorf("Wallet doesn't have id %d for Erc1155(%s)",tokenId,tokenAddress)
   }
-  if this.Erc1155[tokenAddress][tokenIdBytes].Cmp(amount) == -1 {
+  if w.Erc1155[tokenAddress][tokenIdBytes].Cmp(amount) == -1 {
     return fmt.Errorf("Wallet has insufficient Erc1155(%s) id %d funds",tokenId,tokenAddress)
   }
-  this.Erc1155[tokenAddress][tokenIdBytes].Sub(this.Erc1155[tokenAddress][tokenIdBytes],amount)
+  w.Erc1155[tokenAddress][tokenIdBytes].Sub(w.Erc1155[tokenAddress][tokenIdBytes],amount)
   return nil
 }
 
@@ -210,12 +210,12 @@ type WalletApp struct {
   Wallets map[abihandler.Address]*Wallet
 }
 
-func (this *WalletApp) GetWallet(address abihandler.Address) *Wallet {
-  if this.Wallets[address] == nil {
-    this.Wallets[address] = &Wallet{Ether: new(big.Int), Erc20: make(map[abihandler.Address]*big.Int), 
+func (w *WalletApp) GetWallet(address abihandler.Address) *Wallet {
+  if w.Wallets[address] == nil {
+    w.Wallets[address] = &Wallet{Ether: new(big.Int), Erc20: make(map[abihandler.Address]*big.Int), 
       Erc721: make(map[abihandler.Address]map[[32]byte]struct{}), Erc1155: make(map[abihandler.Address]map[[32]byte]*big.Int)}
   }
-  return this.Wallets[address]
+  return w.Wallets[address]
 }
 
 var etherNoticeCodec *abihandler.Codec
@@ -256,55 +256,55 @@ func NewWalletApp() *WalletApp {
   return app
 }
 
-func (this *WalletApp) SetHandler(handler *hdl.Handler) {
+func (w *WalletApp) SetHandler(handler *hdl.Handler) {
   if handler == nil {
     panic("Nil handler")
   }
-  this.handler = handler
+  w.handler = handler
 }
 
-func (this *WalletApp) SetAbiHandler(abiHdl *abihandler.AbiHandler) {
+func (w *WalletApp) SetAbiHandler(abiHdl *abihandler.AbiHandler) {
   if abiHdl == nil {
     panic("Nil handler")
   }
-  if this.handler == nil {
-    this.SetHandler(abiHdl.Handler)
+  if w.handler == nil {
+    w.SetHandler(abiHdl.Handler)
   }
-  this.abiHandler = abiHdl
+  w.abiHandler = abiHdl
 }
 
-func (this *WalletApp) SetUriHandler(uriHdl *urihandler.UriHandler) {
+func (w *WalletApp) SetUriHandler(uriHdl *urihandler.UriHandler) {
   if uriHdl == nil {
     panic("Nil handler")
   }
-  if this.handler == nil {
-    this.SetHandler(uriHdl.Handler)
+  if w.handler == nil {
+    w.SetHandler(uriHdl.Handler)
   }
-  this.uriHandler = uriHdl
+  w.uriHandler = uriHdl
 }
 
-func (this *WalletApp) Handler() *hdl.Handler {
-  if this.handler == nil {
-    this.SetHandler(hdl.NewSimpleHandler())
+func (w *WalletApp) Handler() *hdl.Handler {
+  if w.handler == nil {
+    w.SetHandler(hdl.NewSimpleHandler())
   }
-  return this.handler
+  return w.handler
 }
 
-func (this *WalletApp) AbiHandler() *abihandler.AbiHandler {
-  if this.abiHandler == nil {
-    this.SetAbiHandler(abihandler.AddAbiHandler(this.Handler()))
+func (w *WalletApp) AbiHandler() *abihandler.AbiHandler {
+  if w.abiHandler == nil {
+    w.SetAbiHandler(abihandler.AddAbiHandler(w.Handler()))
   }
-  return this.abiHandler
+  return w.abiHandler
 }
 
-func (this *WalletApp) UriHandler() *urihandler.UriHandler {
-  if this.uriHandler == nil {
-    this.SetUriHandler(urihandler.AddUriHandler(this.Handler()))
+func (w *WalletApp) UriHandler() *urihandler.UriHandler {
+  if w.uriHandler == nil {
+    w.SetUriHandler(urihandler.AddUriHandler(w.Handler()))
   }
-  return this.uriHandler
+  return w.uriHandler
 }
 
-func (this *WalletApp) SetupRoutes(routes []WalletRoute) {
+func (w *WalletApp) SetupRoutes(routes []WalletRoute) {
 
   var forceRelayRoute bool
   var relayRouteAdded bool
@@ -313,83 +313,83 @@ func (this *WalletApp) SetupRoutes(routes []WalletRoute) {
     switch route {
     case DappRelayAdvanceRoute:
       relayRouteAdded = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.DappAddressRelay, abihandler.NewPackedCodec([]string{"address"}), this.HandleRelay)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.DappAddressRelay, abihandler.NewPackedCodec([]string{"address"}), w.HandleRelay)
     case EtherCodecAdvanceRoutes:
       forceRelayRoute = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.EtherPortalAddress, abihandler.NewPackedCodec([]string{"address","uint256","bytes"}), this.EtherPortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherWithdraw",[]string{"uint256","bytes"}), this.EtherWithdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherTransfer",[]string{"address","uint256","bytes"}), this.TransferEtherCodec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.EtherPortalAddress, abihandler.NewPackedCodec([]string{"address","uint256","bytes"}), w.EtherPortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherWithdraw",[]string{"uint256","bytes"}), w.EtherWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherTransfer",[]string{"address","uint256","bytes"}), w.TransferEtherCodec)
     case DepositEtherAdvanceRoute:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.EtherPortalAddress, abihandler.NewPackedCodec([]string{"address","uint256","bytes"}), this.EtherPortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.EtherPortalAddress, abihandler.NewPackedCodec([]string{"address","uint256","bytes"}), w.EtherPortalDeposit)
     case Erc20CodecAdvanceRoutes:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc20PortalAddress, abihandler.NewPackedCodec([]string{"bool","address","address","uint256","bytes"}), this.Erc20PortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Withdraw",[]string{"address","uint256","bytes"}), this.Erc20Withdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Transfer",[]string{"address","address","uint256","bytes"}), this.TransferErc20Codec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc20PortalAddress, abihandler.NewPackedCodec([]string{"bool","address","address","uint256","bytes"}), w.Erc20PortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Withdraw",[]string{"address","uint256","bytes"}), w.Erc20Withdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Transfer",[]string{"address","address","uint256","bytes"}), w.TransferErc20Codec)
     case DepositErc20AdvanceRoute:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc20PortalAddress, abihandler.NewPackedCodec([]string{"bool","address","address","uint256","bytes"}), this.Erc20PortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc20PortalAddress, abihandler.NewPackedCodec([]string{"bool","address","address","uint256","bytes"}), w.Erc20PortalDeposit)
     case Erc721CodecAdvanceRoutes:
       forceRelayRoute = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc721PortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","bytes"}), this.Erc721PortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Withdraw",[]string{"address","uint256","bytes"}), this.Erc721Withdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Transfer",[]string{"address","address","uint256","bytes"}), this.TransferErc721Codec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc721PortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","bytes"}), w.Erc721PortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Withdraw",[]string{"address","uint256","bytes"}), w.Erc721Withdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Transfer",[]string{"address","address","uint256","bytes"}), w.TransferErc721Codec)
     case DepositErc721AdvanceRoute:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc721PortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","bytes"}), this.Erc721PortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc721PortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","bytes"}), w.Erc721PortalDeposit)
     case Erc1155CodecAdvanceRoutes:
       forceRelayRoute = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), this.Erc1155SinglePortalDeposit)
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), this.Erc1155BatchPortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), this.Erc1155BatchWithdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), this.Erc1155SingleWithdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), this.TransferErc1155SingleCodec)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), this.TransferErc1155BatchCodec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), w.Erc1155SinglePortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), w.Erc1155BatchPortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), w.Erc1155BatchWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), w.Erc1155SingleWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), w.TransferErc1155SingleCodec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), w.TransferErc1155BatchCodec)
     case Erc1155SingleCodecAdvanceRoutes:
       forceRelayRoute = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), this.Erc1155SinglePortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), this.Erc1155SingleWithdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), this.TransferErc1155SingleCodec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), w.Erc1155SinglePortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), w.Erc1155SingleWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), w.TransferErc1155SingleCodec)
     case DepositErc1155SingleAdvanceRoute:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), this.Erc1155SinglePortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155SinglePortalAddress, abihandler.NewPackedCodec([]string{"address","address","uint256","uint256","bytes"}), w.Erc1155SinglePortalDeposit)
     case Erc1155BatchCodecAdvanceRoutes:
       forceRelayRoute = true
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), this.Erc1155BatchPortalDeposit)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), this.Erc1155BatchWithdraw)
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), this.TransferErc1155BatchCodec)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), w.Erc1155BatchPortalDeposit)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), w.Erc1155BatchWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), w.TransferErc1155BatchCodec)
     case DepositErc1155AdvanceRoute,DepositErc1155BatchAdvanceRoute:
-      this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), this.Erc1155BatchPortalDeposit)
+      w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.Erc1155BatchPortalAddress, abihandler.NewPackedCodec([]string{"address","address","bytes"}), w.Erc1155BatchPortalDeposit)
     case WithdrawEtherAdvanceRoute,WithdrawEtherCodecAdvanceRoute:
       forceRelayRoute = true
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherWithdraw",[]string{"uint256","bytes"}), this.EtherWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherWithdraw",[]string{"uint256","bytes"}), w.EtherWithdraw)
     case WithdrawErc20AdvanceRoute,WithdrawErc20CodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Withdraw",[]string{"address","uint256","bytes"}), this.Erc20Withdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Withdraw",[]string{"address","uint256","bytes"}), w.Erc20Withdraw)
     case WithdrawErc721AdvanceRoute,WithdrawErc721CodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Withdraw",[]string{"address","uint256","bytes"}), this.Erc721Withdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Withdraw",[]string{"address","uint256","bytes"}), w.Erc721Withdraw)
       forceRelayRoute = true
     case WithdrawErc1155SingleAdvanceRoute,WithdrawErc1155SingleCodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), this.Erc1155SingleWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleWithdraw",[]string{"address","uint256","uint256","bytes"}), w.Erc1155SingleWithdraw)
       forceRelayRoute = true
     case WithdrawErc1155AdvanceRoute,WithdrawErc1155BatchAdvanceRoute,WithdrawErc1155BatchCodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), this.Erc1155BatchWithdraw)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchWithdraw",[]string{"address","uint256[]","uint256[]","bytes"}), w.Erc1155BatchWithdraw)
       forceRelayRoute = true
     case TransferEtherAdvanceRoute,TransferEtherCodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherTransfer",[]string{"address","uint256","bytes"}), this.TransferEtherCodec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","EtherTransfer",[]string{"address","uint256","bytes"}), w.TransferEtherCodec)
     case TransferErc20AdvanceRoute,TransferErc20CodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Transfer",[]string{"address","address","uint256","bytes"}), this.TransferErc20Codec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc20Transfer",[]string{"address","address","uint256","bytes"}), w.TransferErc20Codec)
     case TransferErc721AdvanceRoute,TransferErc721CodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Transfer",[]string{"address","address","uint256","bytes"}), this.TransferErc721Codec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc721Transfer",[]string{"address","address","uint256","bytes"}), w.TransferErc721Codec)
     case TransferErc1155SingleAdvanceRoute,TransferErc1155SingleCodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), this.TransferErc1155SingleCodec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155SingleTransfer",[]string{"address","address","uint256","uint256","bytes"}), w.TransferErc1155SingleCodec)
     case TransferErc1155AdvanceRoute,TransferErc1155BatchAdvanceRoute,TransferErc1155BatchCodecAdvanceRoute:
-      this.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), this.TransferErc1155BatchCodec)
+      w.AbiHandler().HandleAdvanceRoute(abihandler.NewHeaderCodec("wallet","Erc1155BatchTransfer",[]string{"address","address","uint256[]","uint256[]","bytes"}), w.TransferErc1155BatchCodec)
     case BalanceInspectRoute,BalanceCodecInspectRoute:
-      this.AbiHandler().HandleInspectRoute(abihandler.NewHeaderCodec("wallet","Balance",[]string{"address address"}), this.BalanceAbi)
+      w.AbiHandler().HandleInspectRoute(abihandler.NewHeaderCodec("wallet","Balance",[]string{"address address"}), w.BalanceAbi)
     case BalanceUriInspectRoute:
-      this.UriHandler().HandleInspectRoute("/balance/:address", this.BalanceUri)
+      w.UriHandler().HandleInspectRoute("/balance/:address", w.BalanceUri)
     default:
       panic("Unrecognized route")
     }
   }
   if forceRelayRoute && !relayRouteAdded {
-    this.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.DappAddressRelay, abihandler.NewPackedCodec([]string{"address"}), this.HandleRelay)
+    w.AbiHandler().HandleFixedAddressAdvance(hdl.RollupsAddresses.DappAddressRelay, abihandler.NewPackedCodec([]string{"address"}), w.HandleRelay)
   }
 }
 
@@ -397,7 +397,7 @@ func (this *WalletApp) SetupRoutes(routes []WalletRoute) {
 // Relay
 //
 
-func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   addr, ok1 := payloadMap["0"].(abihandler.Address)
 
   if !ok1 {
@@ -405,9 +405,9 @@ func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadMap map[st
     return fmt.Errorf(message)
   }
 
-  this.DappAddress = addr
+  w.DappAddress = addr
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Dapp Relay, dapp address is", addr)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Dapp Relay, dapp address is", addr)}
 
   return nil
 }
@@ -416,7 +416,7 @@ func (this *WalletApp) HandleRelay(metadata *rollups.Metadata, payloadMap map[st
 // Deposit
 //
 
-func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   depositor, ok1 := payloadMap["0"].(abihandler.Address)
   amount, ok2 := payloadMap["1"].(*big.Int)
   // dataBytes, ok3 := payloadMap["2"].([]byte)
@@ -426,7 +426,7 @@ func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap
     return fmt.Errorf(message)
   }
 
-  wallet := this.GetWallet(depositor)
+  wallet := w.GetWallet(depositor)
 
   // Deposit
   err := wallet.DepositEther(amount)
@@ -439,18 +439,18 @@ func (this *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap
   if err != nil {
     return fmt.Errorf("EtherPortalDeposit: encoding notice: %s", err)
   }
-  notice := rollups.Notice{noticePayload}
+  notice := rollups.Notice{Payload:noticePayload}
   _, err = rollups.SendNotice(&notice)
   if err != nil {
     return fmt.Errorf("EtherPortalDeposit: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"native token deposit from",depositor)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"native token deposit from",depositor)}
   
   return nil
 }
 
-func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
 
   // ret, ok1 := payloadMap["0"].(bool)
   tokenAddress, ok2 := payloadMap["1"].(abihandler.Address)
@@ -463,7 +463,7 @@ func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap
     return fmt.Errorf(message)
   }
 
-  wallet := this.GetWallet(depositor)
+  wallet := w.GetWallet(depositor)
 
   // Deposit
   err := wallet.DepositErc20(tokenAddress, amount)
@@ -476,17 +476,17 @@ func (this *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"tokens",tokenAddress,"Erc20 deposit from",depositor)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"tokens",tokenAddress,"Erc20 deposit from",depositor)}
 
   return nil
 }
 
-func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   depositor, ok2 := payloadMap["1"].(abihandler.Address)
   tokenId, ok3 := payloadMap["2"].(*big.Int)
@@ -497,7 +497,7 @@ func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMa
     return fmt.Errorf(message)
   }
 
-  wallet := this.GetWallet(depositor)
+  wallet := w.GetWallet(depositor)
 
   // Deposit
   err := wallet.DepositErc721(tokenAddress, tokenId)
@@ -510,17 +510,17 @@ func (this *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMa
   if err != nil {
     return fmt.Errorf("Erc721PortalDeposit: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc721PortalDeposit: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received id",tokenId,tokenAddress,"Erc721 deposit from",depositor)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received id",tokenId,tokenAddress,"Erc721 deposit from",depositor)}
 
   return nil
 }
 
-func (this *WalletApp) Erc1155SinglePortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) Erc1155SinglePortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   depositor, ok2 := payloadMap["1"].(abihandler.Address)
   tokenId, ok3 := payloadMap["2"].(*big.Int)
@@ -532,7 +532,7 @@ func (this *WalletApp) Erc1155SinglePortalDeposit(metadata *rollups.Metadata, pa
     return fmt.Errorf(message)
   }
 
-  wallet := this.GetWallet(depositor)
+  wallet := w.GetWallet(depositor)
 
   // Deposit
   err := wallet.DepositErc1155(tokenAddress, tokenId, amount)
@@ -546,17 +546,17 @@ func (this *WalletApp) Erc1155SinglePortalDeposit(metadata *rollups.Metadata, pa
   if err != nil {
     return fmt.Errorf("Erc1155SinglePortalDeposit: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc1155SinglePortalDeposit: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"tokens from id",tokenId,tokenAddress,"Erc1155 deposit from",depositor)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amount,"tokens from id",tokenId,tokenAddress,"Erc1155 deposit from",depositor)}
 
   return nil
 }
 
-func (this *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   depositor, ok2 := payloadMap["1"].(abihandler.Address)
   valueBytes, ok3 := payloadMap["2"].([]byte)
@@ -584,7 +584,7 @@ func (this *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, pay
   }
   numTokens := len(tokenIds)
 
-  wallet := this.GetWallet(depositor)
+  wallet := w.GetWallet(depositor)
 
   // Deposit
   for i := 0 ; i < numTokens ; i++ {
@@ -600,12 +600,12 @@ func (this *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, pay
   if err != nil {
     return fmt.Errorf("Erc1155BatchPortalDeposit: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc1155BatchPortalDeposit: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amounts,"tokens from ids",tokenIds,tokenAddress,"Erc1155 deposit from",depositor)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Received",amounts,"tokens from ids",tokenIds,tokenAddress,"Erc1155 deposit from",depositor)}
 
   return nil
 }
@@ -614,12 +614,12 @@ func (this *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, pay
 // Withdraw
 //
 
-func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  if this.DappAddress == (abihandler.Address{}) {
+func (w *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if w.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("EtherWithdraw: Can not generate voucher as there is no dapp address configured")
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
   amount, ok1 := payloadMap["0"].(*big.Int)
   dataBytes, ok2 := payloadMap["1"].([]byte)
 
@@ -633,7 +633,7 @@ func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[
     return fmt.Errorf("EtherWithdraw: error converting address: %s", err)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   // Withdrawal
   err = wallet.WithdrawEther(amount)
@@ -646,7 +646,7 @@ func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[
   if err != nil {
     return fmt.Errorf("EtherWithdraw: encoding voucher: %s", err)
   }
-  _, err = this.handler.SendVoucher(this.DappAddress.String(),voucherPayload)
+  _, err = w.handler.SendVoucher(w.DappAddress.String(),voucherPayload)
   if err != nil {
     return fmt.Errorf("EtherPortalDeposit: error making http request: %s", err)
   }
@@ -656,18 +656,18 @@ func (this *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[
   if err != nil {
     return fmt.Errorf("EtherWithdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("EtherWithdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"ETH from",addr,"data:",dataBytes)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"ETH from",addr,"data:",dataBytes)}
 
   return nil
 }
 
-func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
+func (w *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("EtherWithdraw: payload:",payloadMap)}
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   amount, ok2 := payloadMap["1"].(*big.Int)
   dataBytes, ok3 := payloadMap["2"].([]byte)
@@ -682,7 +682,7 @@ func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[
     return fmt.Errorf("Erc20Withdraw: error converting address: %s", err)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   // Withdrawal
   err = wallet.WithdrawErc20(tokenAddress,amount)
@@ -695,7 +695,7 @@ func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: encoding voucher: %s", err)
   }
-  _, err = this.handler.SendVoucher(tokenAddress.String(),voucherPayload)
+  _, err = w.handler.SendVoucher(tokenAddress.String(),voucherPayload)
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: error making http request: %s", err)
   }
@@ -705,20 +705,20 @@ func (this *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc20Withdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"of Erc20",tokenAddress,"from",addr,"data:",dataBytes)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"of Erc20",tokenAddress,"from",addr,"data:",dataBytes)}
 
   return nil
 }
 
-func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc721Withdraw: payload:",payloadMap)}
+func (w *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc721Withdraw: payload:",payloadMap)}
 
-  if this.DappAddress == (abihandler.Address{}) {
+  if w.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("Erc721Withdraw: Can not generate voucher as there is no dapp address configured")
   }
 
@@ -736,7 +736,7 @@ func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map
     return fmt.Errorf("Erc721Withdraw: error converting address: %s", err)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   // Withdrawal
   err = wallet.WithdrawErc721(tokenAddress,tokenId)
@@ -745,11 +745,11 @@ func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map
   }
     
   // Voucher
-  voucherPayload,err := erc721VoucherCodec.Encode([]interface{}{this.DappAddress,addr,tokenId})
+  voucherPayload,err := erc721VoucherCodec.Encode([]interface{}{w.DappAddress,addr,tokenId})
   if err != nil {
     return fmt.Errorf("Erc721Withdraw: encoding voucher: %s", err)
   }
-  _, err = this.handler.SendVoucher(tokenAddress.String(),voucherPayload)
+  _, err = w.handler.SendVoucher(tokenAddress.String(),voucherPayload)
   if err != nil {
     return fmt.Errorf("Erc721Withdraw: error making http request: %s", err)
   }
@@ -759,20 +759,20 @@ func (this *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map
   if err != nil {
     return fmt.Errorf("Erc721Withdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc721Withdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn id",tokenId,"of Erc721",tokenAddress,"from",addr,"data:",dataBytes)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn id",tokenId,"of Erc721",tokenAddress,"from",addr,"data:",dataBytes)}
 
   return nil
 }
 
-func (this *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc1155SingleWithdraw: payload:",payloadMap)}
+func (w *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc1155SingleWithdraw: payload:",payloadMap)}
 
-  if this.DappAddress == (abihandler.Address{}) {
+  if w.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("Erc1155SingleWithdraw: Can not generate voucher as there is no dapp address configured")
   }
 
@@ -791,7 +791,7 @@ func (this *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payload
     return fmt.Errorf("Erc1155SingleWithdraw: error converting address: %s", err)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   // Withdrawal
   err = wallet.WithdrawErc1155(tokenAddress,tokenId,amount)
@@ -800,11 +800,11 @@ func (this *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payload
   }
 
   // Voucher
-  voucherPayload,err := erc1155SingleVoucherCodec.Encode([]interface{}{this.DappAddress,addr,tokenId,amount,[]byte{}})
+  voucherPayload,err := erc1155SingleVoucherCodec.Encode([]interface{}{w.DappAddress,addr,tokenId,amount,[]byte{}})
   if err != nil {
     return fmt.Errorf("Erc1155SingleWithdraw: encoding voucher: %s", err)
   }
-  _, err = this.handler.SendVoucher(tokenAddress.String(),voucherPayload)
+  _, err = w.handler.SendVoucher(tokenAddress.String(),voucherPayload)
   if err != nil {
     return fmt.Errorf("Erc1155SingleWithdraw: error making http request: %s", err)
   }
@@ -815,20 +815,20 @@ func (this *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payload
   if err != nil {
     return fmt.Errorf("Erc1155SingleWithdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc1155SingleWithdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"tokens of id",tokenId,"of Erc1155",tokenAddress,"from",addr,"data:",dataBytes)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amount,"tokens of id",tokenId,"of Erc1155",tokenAddress,"from",addr,"data:",dataBytes)}
 
   return nil
 }
 
-func (this *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc1155SingleWithdraw: payload:",payloadMap)}
+func (w *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Erc1155SingleWithdraw: payload:",payloadMap)}
 
-  if this.DappAddress == (abihandler.Address{}) {
+  if w.DappAddress == (abihandler.Address{}) {
     return fmt.Errorf("Erc1155BatchWithdraw: Can not generate voucher as there is no dapp address configured")
   }
 
@@ -852,7 +852,7 @@ func (this *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadM
     return fmt.Errorf("Erc1155BatchWithdraw: error converting address: %s", err)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   // Withdrawal
   negAmounts := make([]*big.Int,0)
@@ -868,11 +868,11 @@ func (this *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadM
   }
 
   // Voucher
-  voucherPayload,err := erc1155BatchVoucherCodec.Encode([]interface{}{this.DappAddress,addr,tokenIds,amounts,[]byte{}})
+  voucherPayload,err := erc1155BatchVoucherCodec.Encode([]interface{}{w.DappAddress,addr,tokenIds,amounts,[]byte{}})
   if err != nil {
     return fmt.Errorf("Erc1155BatchWithdraw: encoding voucher: %s", err)
   }
-  _, err = this.handler.SendVoucher(tokenAddress.String(),voucherPayload)
+  _, err = w.handler.SendVoucher(tokenAddress.String(),voucherPayload)
   if err != nil {
     return fmt.Errorf("Erc1155BatchWithdraw: error making http request: %s", err)
   }
@@ -883,12 +883,12 @@ func (this *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadM
   if err != nil {
     return fmt.Errorf("Erc1155BatchWithdraw: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("Erc1155BatchWithdraw: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amounts,"tokens of ids",tokenIds,"of Erc1155",tokenAddress,"from",addr,"data:",dataBytes)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Withdrawn",amounts,"tokens of ids",tokenIds,"of Erc1155",tokenAddress,"from",addr,"data:",dataBytes)}
 
   return nil
 }
@@ -897,7 +897,7 @@ func (this *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadM
 // Transfer
 //
 
-func (this *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   receiver, ok1 := payloadMap["0"].(abihandler.Address)
   amount, ok2 := payloadMap["1"].(*big.Int)
   // dataBytes, ok3 := payloadMap["2"].([]byte)
@@ -911,12 +911,12 @@ func (this *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadMap
     return fmt.Errorf("TransferEtherCodec: error converting address: %s", err)
   }
 
-  return this.TransferEther(sender,receiver,amount)
+  return w.TransferEther(sender,receiver,amount)
 }
 
-func (this *WalletApp) TransferEther(sender abihandler.Address, receiver abihandler.Address, amount *big.Int) error {
+func (w *WalletApp) TransferEther(sender abihandler.Address, receiver abihandler.Address, amount *big.Int) error {
 
-  walletSender := this.GetWallet(sender)
+  walletSender := w.GetWallet(sender)
 
   // Withdrawal
   err := walletSender.WithdrawEther(amount)
@@ -924,7 +924,7 @@ func (this *WalletApp) TransferEther(sender abihandler.Address, receiver abihand
     return fmt.Errorf("TransferEther: error withdrawing Ether: %s", err)
   }
 
-  walletReceiver := this.GetWallet(receiver)
+  walletReceiver := w.GetWallet(receiver)
 
   // Deposit
   err = walletReceiver.DepositEther(amount)
@@ -937,7 +937,7 @@ func (this *WalletApp) TransferEther(sender abihandler.Address, receiver abihand
   if err != nil {
     return fmt.Errorf("TransferEther: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferEther: error making http request: %s", err)
   }
@@ -946,17 +946,17 @@ func (this *WalletApp) TransferEther(sender abihandler.Address, receiver abihand
   if err != nil {
     return fmt.Errorf("TransferEther: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferEther: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amount,"ETH from",sender,"to",receiver)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amount,"ETH from",sender,"to",receiver)}
 
   return nil
 }
 
-func (this *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   receiver, ok2 := payloadMap["1"].(abihandler.Address)
   amount, ok3 := payloadMap["2"].(*big.Int)
@@ -971,12 +971,12 @@ func (this *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadMap
     return fmt.Errorf("TransferErc20Codec: error converting address: %s", err)
   }
 
-  return this.TransferErc20(tokenAddress,sender,receiver,amount)
+  return w.TransferErc20(tokenAddress,sender,receiver,amount)
 }
 
-func (this *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, amount *big.Int) error {
+func (w *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, amount *big.Int) error {
 
-  walletSender := this.GetWallet(sender)
+  walletSender := w.GetWallet(sender)
 
   // Withdrawal
   err := walletSender.WithdrawErc20(tokenAddress,amount)
@@ -984,7 +984,7 @@ func (this *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abi
     return fmt.Errorf("TransferErc20: error withdrawing Erc20: %s", err)
   }
 
-  walletReceiver := this.GetWallet(receiver)
+  walletReceiver := w.GetWallet(receiver)
 
   // Deposit
   err = walletReceiver.DepositErc20(tokenAddress,amount)
@@ -997,7 +997,7 @@ func (this *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abi
   if err != nil {
     return fmt.Errorf("TransferErc20: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc20: error making http request: %s", err)
   }
@@ -1006,17 +1006,17 @@ func (this *WalletApp) TransferErc20(tokenAddress abihandler.Address, sender abi
   if err != nil {
     return fmt.Errorf("TransferErc20: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc20: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amount,"Erc20",tokenAddress,"from",sender,"to",receiver)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amount,"Erc20",tokenAddress,"from",sender,"to",receiver)}
 
   return nil
 }
 
-func (this *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   receiver, ok2 := payloadMap["1"].(abihandler.Address)
   tokenId, ok3 := payloadMap["2"].(*big.Int)
@@ -1031,12 +1031,12 @@ func (this *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadMa
     return fmt.Errorf("TransferErc721Codec: error converting address: %s", err)
   }
 
-  return this.TransferErc721(tokenAddress,sender,receiver,tokenId)
+  return w.TransferErc721(tokenAddress,sender,receiver,tokenId)
 }
 
-func (this *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, tokenId *big.Int) error {
+func (w *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, tokenId *big.Int) error {
 
-  walletSender := this.GetWallet(sender)
+  walletSender := w.GetWallet(sender)
 
   // Withdrawal
   err := walletSender.WithdrawErc721(tokenAddress,tokenId)
@@ -1044,7 +1044,7 @@ func (this *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender ab
     return fmt.Errorf("TransferErc721: error withdrawing Erc721: %s", err)
   }
 
-  walletReceiver := this.GetWallet(receiver)
+  walletReceiver := w.GetWallet(receiver)
 
   // Deposit
   err = walletReceiver.DepositErc721(tokenAddress,tokenId)
@@ -1057,7 +1057,7 @@ func (this *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender ab
   if err != nil {
     return fmt.Errorf("TransferErc721: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc721: error making http request: %s", err)
   }
@@ -1066,17 +1066,17 @@ func (this *WalletApp) TransferErc721(tokenAddress abihandler.Address, sender ab
   if err != nil {
     return fmt.Errorf("TransferErc721: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc721: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",tokenId,"Erc721",tokenAddress,"from",sender,"to",receiver)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",tokenId,"Erc721",tokenAddress,"from",sender,"to",receiver)}
 
   return nil
 }
 
-func (this *WalletApp) TransferErc1155SingleCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) TransferErc1155SingleCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   receiver, ok2 := payloadMap["1"].(abihandler.Address)
   tokenId, ok3 := payloadMap["2"].(*big.Int)
@@ -1092,10 +1092,10 @@ func (this *WalletApp) TransferErc1155SingleCodec(metadata *rollups.Metadata, pa
     return fmt.Errorf("TransferErc1155SingleCodec: error converting address: %s", err)
   }
 
-  return this.TransferErc1155Batch(tokenAddress,sender,receiver,[]*big.Int{tokenId},[]*big.Int{amount})
+  return w.TransferErc1155Batch(tokenAddress,sender,receiver,[]*big.Int{tokenId},[]*big.Int{amount})
 }
 
-func (this *WalletApp) TransferErc1155BatchCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
+func (w *WalletApp) TransferErc1155BatchCodec(metadata *rollups.Metadata, payloadMap map[string]interface{}) error {
   tokenAddress, ok1 := payloadMap["0"].(abihandler.Address)
   receiver, ok2 := payloadMap["1"].(abihandler.Address)
   tokenIds, ok3 := payloadMap["2"].([]*big.Int)
@@ -1111,17 +1111,17 @@ func (this *WalletApp) TransferErc1155BatchCodec(metadata *rollups.Metadata, pay
     return fmt.Errorf("TransferErc1155BatchCodec: error converting address: %s", err)
   }
 
-  return this.TransferErc1155Batch(tokenAddress,sender,receiver,tokenIds,amounts)
+  return w.TransferErc1155Batch(tokenAddress,sender,receiver,tokenIds,amounts)
 }
 
-func (this *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, tokenIds []*big.Int, amounts []*big.Int) error {
+func (w *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sender abihandler.Address, receiver abihandler.Address, tokenIds []*big.Int, amounts []*big.Int) error {
 
   numTokens := len(tokenIds)
 
   // Withdrawal
   negAmounts := make([]*big.Int,0)
   negIds := make([]*big.Int,0)
-  walletSender := this.GetWallet(sender)
+  walletSender := w.GetWallet(sender)
   for i := 0 ; i < numTokens ; i++ {
     err := walletSender.WithdrawErc1155(tokenAddress, tokenIds[i], amounts[i])
     if err != nil {
@@ -1132,7 +1132,7 @@ func (this *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sen
   }
 
   // Deposit
-  walletReceiver := this.GetWallet(receiver)
+  walletReceiver := w.GetWallet(receiver)
   for i := 0 ; i < numTokens ; i++ {
     err := walletReceiver.DepositErc1155(tokenAddress, tokenIds[i], amounts[i])
     if err != nil {
@@ -1146,7 +1146,7 @@ func (this *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sen
   if err != nil {
     return fmt.Errorf("TransferErc1155: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc1155: error making http request: %s", err)
   }
@@ -1156,12 +1156,12 @@ func (this *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sen
   if err != nil {
     return fmt.Errorf("TransferErc1155: encoding notice: %s", err)
   }
-  _, err = this.handler.SendNotice(noticePayload)
+  _, err = w.handler.SendNotice(noticePayload)
   if err != nil {
     return fmt.Errorf("TransferErc1155: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amounts,"tokens with ids",tokenIds,"Erc155",tokenAddress,"from",sender,"to",receiver)}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println("Transfered",amounts,"tokens with ids",tokenIds,"Erc155",tokenAddress,"from",sender,"to",receiver)}
 
   return nil
 }
@@ -1170,40 +1170,40 @@ func (this *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sen
 // Balance
 //
 
-func (this *WalletApp) BalanceAbi(payloadMap map[string]interface{}) error {
+func (w *WalletApp) BalanceAbi(payloadMap map[string]interface{}) error {
   addr, ok1 := payloadMap["address"].(abihandler.Address)
   if !ok1 {
     message := "Balance: parameters error"
-    return fmt.Errorf(message)
+    return fmt.Errorf("%s",message)
   }
 
-  wallet := this.GetWallet(addr)
+  wallet := w.GetWallet(addr)
 
   balanceJson, err := json.Marshal(wallet)
   if err != nil {
-    return fmt.Errorf("Balance: error converting wallet to json: %s", err)
+    return fmt.Errorf("balance: error converting wallet to json: %s", err)
   }
 
-  err = this.handler.SendReport(rollups.Str2Hex(string(balanceJson)))
+  err = w.handler.SendReport(rollups.Str2Hex(string(balanceJson)))
   if err != nil {
-    return fmt.Errorf("Balance: error making http request: %s", err)
+    return fmt.Errorf("balance: error making http request: %s", err)
   }
 
-  if this.handler.LogLevel >= hdl.Debug {DebugLogger.Println(addr,"balance",string(balanceJson))}
+  if w.handler.LogLevel >= hdl.Debug {DebugLogger.Println(addr,"balance",string(balanceJson))}
 
   return nil
 }
 
-func (this *WalletApp) BalanceUri(payloadMap map[string]interface{}) error {
+func (w *WalletApp) BalanceUri(payloadMap map[string]interface{}) error {
   addrStr, ok1 := payloadMap["address"].(string)
   if !ok1 {
-    return fmt.Errorf("Balance: parameters error")
+    return fmt.Errorf("balance: parameters error")
   }
 
   addr,err := abihandler.Hex2Address(addrStr)
   if err != nil {
-    return fmt.Errorf("Balance: parameters error: %s", err)
+    return fmt.Errorf("balance: parameters error: %s", err)
   }
 
-  return this.BalanceAbi(map[string]interface{}{"address":addr})
+  return w.BalanceAbi(map[string]interface{}{"address":addr})
 }

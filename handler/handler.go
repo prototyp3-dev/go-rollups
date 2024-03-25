@@ -2,7 +2,7 @@ package handler
 
 import (
   "encoding/json"
-  "io/ioutil"
+  "io"
   "strconv"
   "strings"
   "fmt"
@@ -81,53 +81,53 @@ var DebugLogger *log.Logger
 
 var LocalHandler = NewSimpleHandler()
 
-func (this *Handler) SetDebug() {
-  this.LogLevel = Debug
+func (h *Handler) SetDebug() {
+  h.LogLevel = Debug
 }
 
-func (this *Handler) SetLogLevel(logLevel LogLevel) {
-  this.LogLevel = logLevel
+func (h *Handler) SetLogLevel(logLevel LogLevel) {
+  h.LogLevel = logLevel
 }
 
 func HandleDefault(fnHandle InspectHandlerFunc) {
   LocalHandler.HandleDefault(fnHandle)
 }
 
-func (this *Handler) HandleDefault(fnHandle InspectHandlerFunc) {
+func (h *Handler) HandleDefault(fnHandle InspectHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
   fnHandler := InspectHandler{fnHandle}
-  this.DefaultHandler = &fnHandler
+  h.DefaultHandler = &fnHandler
 }
 
 func HandleInspect(fnHandle InspectHandlerFunc) {
   LocalHandler.HandleInspect(fnHandle)
 }
 
-func (this *Handler) HandleInspect(fnHandle InspectHandlerFunc) {
+func (h *Handler) HandleInspect(fnHandle InspectHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
   fnHandler := InspectHandler{fnHandle}
-  this.InspectHandler = &fnHandler
+  h.InspectHandler = &fnHandler
 }
 
 func HandleAdvance(fnHandle AdvanceHandlerFunc) {
   LocalHandler.HandleAdvance(fnHandle)
 }
-func (this *Handler) HandleAdvance(fnHandle AdvanceHandlerFunc) {
+func (h *Handler) HandleAdvance(fnHandle AdvanceHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
   fnHandler := AdvanceHandler{fnHandle}
-  this.AdvanceHandler = &fnHandler
+  h.AdvanceHandler = &fnHandler
 }
 
 func HandleRollupsFixedAddresses(fnHandle AdvanceHandlerFunc) {
   LocalHandler.HandleRollupsFixedAddresses(fnHandle)
 }
-func (this *Handler) HandleRollupsFixedAddresses(fnHandle AdvanceHandlerFunc) {
+func (h *Handler) HandleRollupsFixedAddresses(fnHandle AdvanceHandlerFunc) {
   if RollupsAddresses == (NetworkAddresses{}) {
 		panic("rollups handler: uninitialized RollupsAddresses")
   }
@@ -135,76 +135,76 @@ func (this *Handler) HandleRollupsFixedAddresses(fnHandle AdvanceHandlerFunc) {
 		panic("rollups handler: nil handler")
 	}
   fnHandler := AdvanceHandler{fnHandle}
-  this.RollupsFixedAddressHandler = &fnHandler
+  h.RollupsFixedAddressHandler = &fnHandler
 }
 
 func HandleFixedAddress(address string, fnHandle AdvanceHandlerFunc) {
   LocalHandler.HandleFixedAddress(address,fnHandle)
 }
-func (this *Handler) HandleFixedAddress(address string, fnHandle AdvanceHandlerFunc) {
+func (h *Handler) HandleFixedAddress(address string, fnHandle AdvanceHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
 	if address == "" || address[:2] != "0x" || len(address) != 42 {
 		panic("rollups handler: invalid address")
 	}
-  if this.FixedAddressHandlers == nil {
-    this.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
+  if h.FixedAddressHandlers == nil {
+    h.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
   }
   fnHandler := RoutesAdvanceHandler{func(metadata *rollups.Metadata,payloadHex string) (error,bool) {
     return fnHandle(metadata,payloadHex),true
   }}
-  this.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
+  h.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
 }
 
 func HandleFixedAddressRoutes(address string, fnHandle RoutesAdvanceHandlerFunc) {
   LocalHandler.HandleFixedAddressRoutes(address,fnHandle)
 }
-func (this *Handler) HandleFixedAddressRoutes(address string, fnHandle RoutesAdvanceHandlerFunc) {
+func (h *Handler) HandleFixedAddressRoutes(address string, fnHandle RoutesAdvanceHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
 	if address == "" || address[:2] != "0x" || len(address) != 42 {
 		panic("rollups handler: invalid address")
 	}
-  if this.FixedAddressHandlers == nil {
-    this.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
+  if h.FixedAddressHandlers == nil {
+    h.FixedAddressHandlers = make(map[string]*RoutesAdvanceHandler)
   }
   fnHandler := RoutesAdvanceHandler{fnHandle}
-  this.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
+  h.FixedAddressHandlers[strings.ToLower(address)] = &fnHandler
 }
 
-func (this *Handler) HandleAdvanceRoutes(fnHandle RoutesAdvanceHandlerFunc) {
+func (h *Handler) HandleAdvanceRoutes(fnHandle RoutesAdvanceHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
-  if this.RoutesAdvanceHandlers == nil {
-    this.RoutesAdvanceHandlers = []*RoutesAdvanceHandler{}
+  if h.RoutesAdvanceHandlers == nil {
+    h.RoutesAdvanceHandlers = []*RoutesAdvanceHandler{}
   }
   fnHandler := RoutesAdvanceHandler{fnHandle}
-  this.RoutesAdvanceHandlers = append(this.RoutesAdvanceHandlers,&fnHandler)
+  h.RoutesAdvanceHandlers = append(h.RoutesAdvanceHandlers,&fnHandler)
 }
 
-func (this *Handler) HandleInspectRoutes(fnHandle RoutesInspectHandlerFunc) {
+func (h *Handler) HandleInspectRoutes(fnHandle RoutesInspectHandlerFunc) {
 	if fnHandle == nil {
 		panic("rollups handler: nil handler")
 	}
-  if this.RoutesInspectHandlers == nil {
-    this.RoutesInspectHandlers = []*RoutesInspectHandler{}
+  if h.RoutesInspectHandlers == nil {
+    h.RoutesInspectHandlers = []*RoutesInspectHandler{}
   }
   fnHandler := RoutesInspectHandler{fnHandle}
-  this.RoutesInspectHandlers = append(this.RoutesInspectHandlers,&fnHandler)
+  h.RoutesInspectHandlers = append(h.RoutesInspectHandlers,&fnHandler)
 }
 
-func (this *Handler) SendNotice(payloadHex string) (uint64,error) {
-  notice := &rollups.Notice{payloadHex}
-  if this.LogLevel >= Trace {TraceLogger.Println("Sending notice status",notice)}
+func (h *Handler) SendNotice(payloadHex string) (uint64,error) {
+  notice := &rollups.Notice{Payload:payloadHex}
+  if h.LogLevel >= Trace {TraceLogger.Println("Sending notice status",notice)}
   res, err := rollups.SendNotice(notice)
   if err != nil {
     return 0,fmt.Errorf("SendNotice: error making http request: %s", err)
   }
  
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return 0,fmt.Errorf("SendNotice: could not read response body: %s", err)
   }
@@ -214,20 +214,20 @@ func (this *Handler) SendNotice(payloadHex string) (uint64,error) {
   if err != nil {
     return 0,fmt.Errorf("SendNotice: Error unmarshaling body: %s", err)
   }
-  if this.LogLevel >= Debug {DebugLogger.Println("Received notice status", strconv.Itoa(res.StatusCode), "body", string(body), "index", strconv.FormatUint(indexRes.Index,10))}
+  if h.LogLevel >= Debug {DebugLogger.Println("Received notice status", strconv.Itoa(res.StatusCode), "body", string(body), "index", strconv.FormatUint(indexRes.Index,10))}
 
   return indexRes.Index,nil
 }
 
-func (this *Handler) SendVoucher(destination string, payloadHex string) (uint64,error) {
+func (h *Handler) SendVoucher(destination string, payloadHex string) (uint64,error) {
   voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex}
-  if this.LogLevel >= Trace {TraceLogger.Println("Sending voucher status",voucher)}
+  if h.LogLevel >= Trace {TraceLogger.Println("Sending voucher status",voucher)}
   res, err := rollups.SendVoucher(voucher)
   if err != nil {
     return 0,fmt.Errorf("SendVoucher: error making http request: %s", err)
   }
  
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return 0,fmt.Errorf("SendVoucher: could not read response body: %s", err)
   }
@@ -237,41 +237,41 @@ func (this *Handler) SendVoucher(destination string, payloadHex string) (uint64,
   if err != nil {
     return 0,fmt.Errorf("SendVoucher: Error unmarshaling body: %s", err)
   }
-  if this.LogLevel >= Debug {DebugLogger.Println("Received voucher status", strconv.Itoa(res.StatusCode), "body", string(body), "index", strconv.FormatUint(indexRes.Index,10))}
+  if h.LogLevel >= Debug {DebugLogger.Println("Received voucher status", strconv.Itoa(res.StatusCode), "body", string(body), "index", strconv.FormatUint(indexRes.Index,10))}
 
   return indexRes.Index,nil
 }
 
-func (this *Handler) SendReport(payloadHex string) error {
-  report := &rollups.Report{payloadHex}
-  if this.LogLevel >= Trace {TraceLogger.Println("Sending report status",report)}
+func (h *Handler) SendReport(payloadHex string) error {
+  report := &rollups.Report{Payload:payloadHex}
+  if h.LogLevel >= Trace {TraceLogger.Println("Sending report status",report)}
   res, err := rollups.SendReport(report)
   if err != nil {
     return fmt.Errorf("SendReport: error making http request: %s", err)
   }
 
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return fmt.Errorf("SendReport: could not read response body: %s", err)
   }
-  if this.LogLevel >= Debug {DebugLogger.Println("Received report status", strconv.Itoa(res.StatusCode), "body", string(body))}
+  if h.LogLevel >= Debug {DebugLogger.Println("Received report status", strconv.Itoa(res.StatusCode), "body", string(body))}
 
   return nil
 }
 
-func (this *Handler) SendException(payloadHex string) error {
-  exception := &rollups.Exception{payloadHex}
-  if this.LogLevel >= Trace {TraceLogger.Println("Sending exception status",exception)}
+func (h *Handler) SendException(payloadHex string) error {
+  exception := &rollups.Exception{Payload:payloadHex}
+  if h.LogLevel >= Trace {TraceLogger.Println("Sending exception status",exception)}
   res, err := rollups.SendException(exception)
   if err != nil {
     return fmt.Errorf("SendException: error making http request: %s", err)
   }
 
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return fmt.Errorf("SendException: could not read response body: %s", err)
   }
-  if this.LogLevel >= Debug {DebugLogger.Println("Received exception status", strconv.Itoa(res.StatusCode), "body", string(body))}
+  if h.LogLevel >= Debug {DebugLogger.Println("Received exception status", strconv.Itoa(res.StatusCode), "body", string(body))}
 
   return nil
 }
@@ -299,46 +299,51 @@ func Run() error {
   return LocalHandler.Run()
 }
 
-func (this *Handler) Run() error {
-  finish := rollups.Finish{"accept"}
+func (h *Handler) Run() error {
+  if rollups.GetRollupServer() == "" {
+    rollups.SetRollupServer(os.Getenv("ROLLUP_HTTP_SERVER_URL"))
+  }
+  if rollups.GetRollupServer() == "" {
+    return fmt.Errorf("rollup server not defined")
+  }
 
-  for true {
-    if this.LogLevel >= Trace == true {TraceLogger.Println("Sending finish")}
+  finish := rollups.Finish{Status:"accept"}
+
+  for {
+    if h.LogLevel >= Trace {TraceLogger.Println("Sending finish")}
     res, err := rollups.SendFinish(&finish)
     if err != nil {
-      return fmt.Errorf("Error making http request: %s", err)
+      return fmt.Errorf("error making http request: %s", err)
     }
-    if this.LogLevel >= Trace {TraceLogger.Println("Received finish status", strconv.Itoa(res.StatusCode))}
+    if h.LogLevel >= Trace {TraceLogger.Println("Received finish status", strconv.Itoa(res.StatusCode))}
     
     if (res.StatusCode == 202){
-      if this.LogLevel >= Trace {TraceLogger.Println("No pending rollup request, trying again")}
+      if h.LogLevel >= Trace {TraceLogger.Println("No pending rollup request, trying again")}
     } else {
 
-      resBody, err := ioutil.ReadAll(res.Body)
+      resBody, err := io.ReadAll(res.Body)
       if err != nil {
-        return fmt.Errorf("Error: could not read response body: %s", err)
+        return fmt.Errorf("error: could not read response body: %s", err)
       }
-      if this.LogLevel >= Debug {DebugLogger.Println("Received request",string(resBody))}
+      if h.LogLevel >= Debug {DebugLogger.Println("Received request",string(resBody))}
       
       var response rollups.FinishResponse
       err = json.Unmarshal(resBody, &response)
       if err != nil {
-        return fmt.Errorf("Error: unmarshaling body: %s", err)
+        return fmt.Errorf("error: unmarshaling body: %s", err)
       }
 
       finish.Status = "accept"
-      err = this.internalHandleFinish(&response)
+      err = h.internalHandleFinish(&response)
       if err != nil {
-        if this.LogLevel >= Error {ErrorLogger.Println("Error:", err)}
+        if h.LogLevel >= Error {ErrorLogger.Println("Error:", err)}
         finish.Status = "reject"
       }
     }
   }
-
-	return nil
 }
 
-func (this *Handler) internalHandleFinish(response *rollups.FinishResponse) error {
+func (h *Handler) internalHandleFinish(response *rollups.FinishResponse) error {
   var err error
 
   switch response.Type {
@@ -347,57 +352,57 @@ func (this *Handler) internalHandleFinish(response *rollups.FinishResponse) erro
     if err = json.Unmarshal(response.Data, data); err != nil {
       return fmt.Errorf("Handler: Error unmarshaling advance: %s", err)
     }
-    err = this.internalHandleAdvance(data)
+    err = h.internalHandleAdvance(data)
   case "inspect_state":
     data := new(rollups.InspectResponse)
     if err = json.Unmarshal(response.Data, data); err != nil {
       return fmt.Errorf("Handler: Error unmarshaling inspect: %s", err)
     }
-    err = this.internalHandleInspect(data)
+    err = h.internalHandleInspect(data)
   }
   return err
 }
 
-func (this *Handler) internalHandleAdvance(data *rollups.AdvanceResponse) error {
-  if this.FixedAddressHandlers != nil {
-    if this.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)] != nil {
-      if err,processed := this.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)].Handler.handle(&data.Metadata,data.Payload); processed { 
+func (h *Handler) internalHandleAdvance(data *rollups.AdvanceResponse) error {
+  if h.FixedAddressHandlers != nil {
+    if h.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)] != nil {
+      if err,processed := h.FixedAddressHandlers[strings.ToLower(data.Metadata.MsgSender)].Handler.handle(&data.Metadata,data.Payload); processed { 
         return err
       }
     }
   }
-  if this.RollupsFixedAddressHandler != nil && KnownRollupsAddresses[strings.ToLower(data.Metadata.MsgSender)] {
-    return this.RollupsFixedAddressHandler.Handler.handle(&data.Metadata,data.Payload)
+  if h.RollupsFixedAddressHandler != nil && KnownRollupsAddresses[strings.ToLower(data.Metadata.MsgSender)] {
+    return h.RollupsFixedAddressHandler.Handler.handle(&data.Metadata,data.Payload)
   }
-  if this.RoutesAdvanceHandlers != nil {
-    for _, routeHandler := range this.RoutesAdvanceHandlers {
+  if h.RoutesAdvanceHandlers != nil {
+    for _, routeHandler := range h.RoutesAdvanceHandlers {
       if err,processed := routeHandler.Handler.handle(&data.Metadata,data.Payload); processed { 
         return err
       }
     }
   }
-  if this.AdvanceHandler != nil {
-    return this.AdvanceHandler.Handler.handle(&data.Metadata,data.Payload)
+  if h.AdvanceHandler != nil {
+    return h.AdvanceHandler.Handler.handle(&data.Metadata,data.Payload)
   }
-  if this.DefaultHandler != nil {
-    return this.DefaultHandler.Handler.handle(data.Payload)
+  if h.DefaultHandler != nil {
+    return h.DefaultHandler.Handler.handle(data.Payload)
   }
   return nil
 }
 
-func (this *Handler) internalHandleInspect(data *rollups.InspectResponse) error {
-  if this.RoutesInspectHandlers != nil {
-    for _, routeHandler := range this.RoutesInspectHandlers {
+func (h *Handler) internalHandleInspect(data *rollups.InspectResponse) error {
+  if h.RoutesInspectHandlers != nil {
+    for _, routeHandler := range h.RoutesInspectHandlers {
       if err,processed := routeHandler.Handler.handle(data.Payload); processed {
         return err
       }
     }
   }
-  if this.InspectHandler != nil {
-    return this.InspectHandler.Handler.handle(data.Payload)
+  if h.InspectHandler != nil {
+    return h.InspectHandler.Handler.handle(data.Payload)
   }
-  if this.DefaultHandler != nil {
-    return this.DefaultHandler.Handler.handle(data.Payload)
+  if h.DefaultHandler != nil {
+    return h.DefaultHandler.Handler.handle(data.Payload)
   }
   return nil
 }
@@ -407,7 +412,7 @@ func (this *Handler) internalHandleInspect(data *rollups.InspectResponse) error 
 var RollupsAddresses NetworkAddresses
 var KnownRollupsAddresses map[string]bool
 
-func (this *Handler) InitializeRollupsAddresses(currentNetwork string) error {
+func (h *Handler) InitializeRollupsAddresses(currentNetwork string) error {
   return InitializeRollupsAddresses(currentNetwork)
 }
 func InitializeRollupsAddresses(currentNetwork string) error {
@@ -418,7 +423,7 @@ func InitializeRollupsAddresses(currentNetwork string) error {
   json.Unmarshal([]byte(networks), &result)
 
   if result[currentNetwork] == nil {
-    panic(fmt.Sprint("InitializeRollupsAddresses: Unknown network"))
+    panic("InitializeRollupsAddresses: Unknown network")
   }
 
   jsonNetwork, _ := json.Marshal(result[currentNetwork])

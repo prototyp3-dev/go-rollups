@@ -123,7 +123,7 @@ func HandleErc1155Batch(metadata *rollups.Metadata, payloadHex string) error {
 func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
   infolog.Println("Dapp Relay, sender is",metadata.MsgSender,"and the my address is", payloadHex)
   dappAddress = payloadHex
-  report := rollups.Report{rollups.Str2Hex("Set address relay")}
+  report := rollups.Report{Payload: rollups.Str2Hex("Set address relay")}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleFixed: error making http request: %s", err)

@@ -45,50 +45,50 @@ func AddJsonHandler(routeKey string, handler *hdl.Handler) *JsonHandler {
   return &h
 }
 
-func (this *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
+func (h *JsonHandler) HandleAdvanceRoute(route string, fnHandle AdvanceMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("json handler: nil handler")
 	}
 	if route == "" {
 		panic("json handler: invalid route")
 	}
-  if this.RouteAdvanceHandlers == nil {
-    this.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
+  if h.RouteAdvanceHandlers == nil {
+    h.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
   }
-	if this.RouteAdvanceHandlers[route] != nil {
+	if h.RouteAdvanceHandlers[route] != nil {
 		panic("json handler: route already added")
 	}
   fnHandler := AdvanceMapHandler{fnHandle}
-  this.RouteAdvanceHandlers[route] = &fnHandler
-  if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Created JSON Advance route for",route) }
+  h.RouteAdvanceHandlers[route] = &fnHandler
+  if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Created JSON Advance route for",route) }
 }
 
 
-func (this *JsonHandler) HandleInspectRoute(route string, fnHandle InspectMapHandlerFunc) {
+func (h *JsonHandler) HandleInspectRoute(route string, fnHandle InspectMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("json handler: nil handler")
 	}
 	if route == "" {
 		panic("json handler: invalid route")
 	}
-  if this.RouteInspectHandlers == nil {
-    this.RouteInspectHandlers = make(map[string]*InspectMapHandler)
+  if h.RouteInspectHandlers == nil {
+    h.RouteInspectHandlers = make(map[string]*InspectMapHandler)
   }
-	if this.RouteInspectHandlers[route] != nil {
+	if h.RouteInspectHandlers[route] != nil {
 		panic("json handler: route already added")
 	}
   fnHandler := InspectMapHandler{fnHandle}
-  this.RouteInspectHandlers[route] = &fnHandler
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created JSON Inspect route for",route) }
+  h.RouteInspectHandlers[route] = &fnHandler
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created JSON Inspect route for",route) }
 }
 
-func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interface{},bool) {
+func (h *JsonHandler) getRoute(payloadHex string) (string,map[string]interface{},bool) {
   var result map[string]interface{}
-  if this.RouteKey != "" {
+  if h.RouteKey != "" {
     // decode json and get route key
     if payload, err := rollups.Hex2Str(payloadHex); err == nil {
       if err = json.Unmarshal([]byte(payload), &result); err == nil {
-        if route, ok := result[this.RouteKey].(string); ok {
+        if route, ok := result[h.RouteKey].(string); ok {
           return route,result, true
         }
       }
@@ -97,37 +97,37 @@ func (this *JsonHandler) getRoute(payloadHex string) (string,map[string]interfac
   return "",result, false
 }
 
-func (this *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
-  if route,result, ok := this.getRoute(payloadHex); ok {
-    if this.RouteAdvanceHandlers[route] != nil {
-      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Advance Request:",result) }
-      return this.RouteAdvanceHandlers[route].Handler.Handle(metadata,result),true
+func (h *JsonHandler) jsonAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
+  if route,result, ok := h.getRoute(payloadHex); ok {
+    if h.RouteAdvanceHandlers[route] != nil {
+      if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Advance Request:",result) }
+      return h.RouteAdvanceHandlers[route].Handler.Handle(metadata,result),true
     }
   }
   return nil,false
 }
 
-func (this *JsonHandler) jsonInspectHandler(payloadHex string) (error,bool) {
-  if route,result, ok := this.getRoute(payloadHex); ok {
-    if this.RouteInspectHandlers[route] != nil {
-      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Inspect Request:",result) }
-      return this.RouteInspectHandlers[route].Handler.Handle(result),true
+func (h *JsonHandler) jsonInspectHandler(payloadHex string) (error,bool) {
+  if route,result, ok := h.getRoute(payloadHex); ok {
+    if h.RouteInspectHandlers[route] != nil {
+      if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received JSON route",route,"Inspect Request:",result) }
+      return h.RouteInspectHandlers[route].Handler.Handle(result),true
     }
   }
   return nil,false
 }
 
 
-func (this *JsonHandler) SetDebug() {this.Handler.SetDebug()}
-func (this *JsonHandler) SetLogLevel(logLevel hdl.LogLevel) {this.Handler.SetLogLevel(logLevel)}
-func (this *JsonHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleDefault(fnHandle)}
-func (this *JsonHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleInspect(fnHandle)}
-func (this *JsonHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleAdvance(fnHandle)}
-func (this *JsonHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleRollupsFixedAddresses(fnHandle)}
-func (this *JsonHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleFixedAddress(address,fnHandle)}
-func (this *JsonHandler) SendNotice(payloadHex string) (uint64,error) {return this.Handler.SendNotice(payloadHex)}
-func (this *JsonHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return this.Handler.SendVoucher(destination,payloadHex)}
-func (this *JsonHandler) SendReport(payloadHex string) error {return this.Handler.SendReport(payloadHex)}
-func (this *JsonHandler) SendException(payloadHex string) error {return this.Handler.SendException(payloadHex)}
-func (this *JsonHandler) Run() error {return this.Handler.Run()}
-func (this *JsonHandler) InitializeRollupsAddresses(currentNetwork string) error {return this.Handler.InitializeRollupsAddresses(currentNetwork)}
+func (h *JsonHandler) SetDebug() {h.Handler.SetDebug()}
+func (h *JsonHandler) SetLogLevel(logLevel hdl.LogLevel) {h.Handler.SetLogLevel(logLevel)}
+func (h *JsonHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleDefault(fnHandle)}
+func (h *JsonHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleInspect(fnHandle)}
+func (h *JsonHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleAdvance(fnHandle)}
+func (h *JsonHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
+func (h *JsonHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
+func (h *JsonHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
+func (h *JsonHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *JsonHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
+func (h *JsonHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
+func (h *JsonHandler) Run() error {return h.Handler.Run()}
+func (h *JsonHandler) InitializeRollupsAddresses(currentNetwork string) error {return h.Handler.InitializeRollupsAddresses(currentNetwork)}

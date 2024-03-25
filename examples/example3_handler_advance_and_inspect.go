@@ -2,7 +2,7 @@ package main
 
 import (
   "encoding/json"
-  "io/ioutil"
+  "io"
   "strconv" 
   "fmt"
   "log"
@@ -21,7 +21,7 @@ func HandleAdvance(metadata *rollups.Metadata, payloadHex string) error {
   }
   infolog.Println("Advance request payload:", payload)
 
-  notice := rollups.Notice{rollups.Str2Hex("Advanced " + payload)}
+  notice := rollups.Notice{Payload: rollups.Str2Hex("Advanced " + payload)}
   res, err := rollups.SendNotice(&notice)
   if err != nil {
     return fmt.Errorf("HandleAdvance: error making http request: %s", err)
@@ -49,13 +49,13 @@ func HandleInspect(payloadHex string) error {
   }
   infolog.Println("Inspect request payload:", payload)
 
-  report := rollups.Report{rollups.Str2Hex("Inspected " + payload)}
+  report := rollups.Report{Payload: rollups.Str2Hex("Inspected " + payload)}
   res, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleInspect: error making http request: %s", err)
   }
 
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return fmt.Errorf("HandleInspect: could not read response body:", err)
   }

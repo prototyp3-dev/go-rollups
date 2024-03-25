@@ -43,7 +43,7 @@ func AddAbiHandler(handler *hdl.Handler) *AbiHandler {
   return &h
 }
 
-func (this *AbiHandler) HandleAdvanceRoute(routeCodec *Codec, fnHandle AdvanceMapHandlerFunc) {
+func (h *AbiHandler) HandleAdvanceRoute(routeCodec *Codec, fnHandle AdvanceMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
@@ -53,25 +53,25 @@ func (this *AbiHandler) HandleAdvanceRoute(routeCodec *Codec, fnHandle AdvanceMa
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
     panic("abi handler: ambiguous codec fields")
   }
-  if this.RouteAdvanceHandlers == nil {
-    this.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
+  if h.RouteAdvanceHandlers == nil {
+    h.RouteAdvanceHandlers = make(map[string]*AdvanceMapHandler)
   }
-  if this.AdvanceCodecs == nil {
-    this.AdvanceCodecs = make(map[string]*Codec)
+  if h.AdvanceCodecs == nil {
+    h.AdvanceCodecs = make(map[string]*Codec)
   }
-	if this.RouteAdvanceHandlers[routeCodec.Header] != nil {
+	if h.RouteAdvanceHandlers[routeCodec.Header] != nil {
 		panic("abi handler: route already added")
 	}
-  if (len(this.RouteAdvanceHandlers) > 0 && routeCodec.Header == "") || this.AdvanceCodecs[""] != nil {
+  if (len(h.RouteAdvanceHandlers) > 0 && routeCodec.Header == "") || h.AdvanceCodecs[""] != nil {
     panic("abi handler: multiple codecs with no header-codec ")
   }
   fnHandler := AdvanceMapHandler{fnHandle}
-  this.RouteAdvanceHandlers[routeCodec.Header] = &fnHandler
-  this.AdvanceCodecs[routeCodec.Header] = routeCodec
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created ABI Advance route for",routeCodec) }
+  h.RouteAdvanceHandlers[routeCodec.Header] = &fnHandler
+  h.AdvanceCodecs[routeCodec.Header] = routeCodec
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created ABI Advance route for",routeCodec) }
 }
 
-func (this *AbiHandler) HandleFixedAddressAdvance(address string, routeCodec *Codec, fnHandle AdvanceMapHandlerFunc) {
+func (h *AbiHandler) HandleFixedAddressAdvance(address string, routeCodec *Codec, fnHandle AdvanceMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
@@ -81,38 +81,38 @@ func (this *AbiHandler) HandleFixedAddressAdvance(address string, routeCodec *Co
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
     panic("abi handler: ambiguous codec fields")
   }
-  if this.FixedAddressAdvanceHandlers == nil {
-    this.FixedAddressAdvanceHandlers = make(map[string]map[string]*AdvanceMapHandler)
+  if h.FixedAddressAdvanceHandlers == nil {
+    h.FixedAddressAdvanceHandlers = make(map[string]map[string]*AdvanceMapHandler)
   }
-  if this.FixedAdvanceCodecs == nil {
-    this.FixedAdvanceCodecs = make(map[string]map[string]*Codec)
+  if h.FixedAdvanceCodecs == nil {
+    h.FixedAdvanceCodecs = make(map[string]map[string]*Codec)
   }
   address = strings.ToLower(address)
-  if this.FixedAddressAdvanceHandlers[address] == nil {
-    this.FixedAddressAdvanceHandlers[address] = make(map[string]*AdvanceMapHandler)
+  if h.FixedAddressAdvanceHandlers[address] == nil {
+    h.FixedAddressAdvanceHandlers[address] = make(map[string]*AdvanceMapHandler)
   }
-  if this.FixedAdvanceCodecs[address] == nil {
-    this.FixedAdvanceCodecs[address] = make(map[string]*Codec)
+  if h.FixedAdvanceCodecs[address] == nil {
+    h.FixedAdvanceCodecs[address] = make(map[string]*Codec)
   }
 
-	if this.FixedAddressAdvanceHandlers[address][routeCodec.Header] != nil {
+	if h.FixedAddressAdvanceHandlers[address][routeCodec.Header] != nil {
 		panic("abi handler: route already added")
 	}
-  if (len(this.FixedAddressAdvanceHandlers[address]) > 0 && routeCodec.Header == "") || this.FixedAdvanceCodecs[address][""] != nil {
+  if (len(h.FixedAddressAdvanceHandlers[address]) > 0 && routeCodec.Header == "") || h.FixedAdvanceCodecs[address][""] != nil {
     panic("abi handler: multiple codecs with no header-codec ")
   }
   fnHandler := AdvanceMapHandler{fnHandle}
-  this.FixedAddressAdvanceHandlers[address][routeCodec.Header] = &fnHandler
-  this.FixedAdvanceCodecs[address][routeCodec.Header] = routeCodec
+  h.FixedAddressAdvanceHandlers[address][routeCodec.Header] = &fnHandler
+  h.FixedAdvanceCodecs[address][routeCodec.Header] = routeCodec
 
-  if this.Handler.FixedAddressHandlers[address] == nil {
-    this.Handler.HandleFixedAddressRoutes(address, this.abiFixedAdvanceHandler(address))
+  if h.Handler.FixedAddressHandlers[address] == nil {
+    h.Handler.HandleFixedAddressRoutes(address, h.abiFixedAdvanceHandler(address))
   }
 
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created Fixed ABI Advance route for",address,routeCodec) }
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created Fixed ABI Advance route for",address,routeCodec) }
 }
 
-func (this *AbiHandler) HandleInspectRoute(routeCodec *Codec, fnHandle InspectMapHandlerFunc) {
+func (h *AbiHandler) HandleInspectRoute(routeCodec *Codec, fnHandle InspectMapHandlerFunc) {
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
@@ -122,112 +122,112 @@ func (this *AbiHandler) HandleInspectRoute(routeCodec *Codec, fnHandle InspectMa
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
     panic("abi handler: ambiguous codec fields")
   }
-  if this.RouteInspectHandlers == nil {
-    this.RouteInspectHandlers = make(map[string]*InspectMapHandler)
+  if h.RouteInspectHandlers == nil {
+    h.RouteInspectHandlers = make(map[string]*InspectMapHandler)
   }
-  if this.InspectCodecs == nil {
-    this.InspectCodecs = make(map[string]*Codec)
+  if h.InspectCodecs == nil {
+    h.InspectCodecs = make(map[string]*Codec)
   }
-	if this.RouteInspectHandlers[routeCodec.Header] != nil {
+	if h.RouteInspectHandlers[routeCodec.Header] != nil {
 		panic("abi handler: route already added")
 	}
-  if (len(this.RouteInspectHandlers) > 0 && routeCodec.Header == "") || this.InspectCodecs[""] != nil {
+  if (len(h.RouteInspectHandlers) > 0 && routeCodec.Header == "") || h.InspectCodecs[""] != nil {
     panic("abi handler: multiple codecs with no header-codec ")
   }
   fnHandler := InspectMapHandler{fnHandle}
-  this.RouteInspectHandlers[routeCodec.Header] = &fnHandler
-  this.InspectCodecs[routeCodec.Header] = routeCodec
-  if this.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created ABI Inspect route for",routeCodec) }
+  h.RouteInspectHandlers[routeCodec.Header] = &fnHandler
+  h.InspectCodecs[routeCodec.Header] = routeCodec
+  if h.Handler.LogLevel >= hdl.Debug {hdl.DebugLogger.Println("Created ABI Inspect route for",routeCodec) }
 }
 
-func (this *AbiHandler) abiAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
-  if this.AdvanceCodecs[""] != nil {
-    codec := this.AdvanceCodecs[""]
+func (h *AbiHandler) abiAdvanceHandler(metadata *rollups.Metadata, payloadHex string) (error,bool) {
+  if h.AdvanceCodecs[""] != nil {
+    codec := h.AdvanceCodecs[""]
     result,err := codec.Decode(payloadHex)
     if err != nil {
       return err,true
     }
-    if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Advance Request:",result) }
-    return this.RouteAdvanceHandlers[""].Handler.Handle(metadata,result),true
+    if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Advance Request:",result) }
+    return h.RouteAdvanceHandlers[""].Handler.Handle(metadata,result),true
   }
   if len(payloadHex) >= 66 {
     header := payloadHex[:66]
-    if this.RouteAdvanceHandlers[header] != nil {
-      codec := this.AdvanceCodecs[header]
+    if h.RouteAdvanceHandlers[header] != nil {
+      codec := h.AdvanceCodecs[header]
       result,err := codec.Decode(payloadHex)
       if err != nil {
         return err,true
       }
-      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Advance Request:",result) }
-      return this.RouteAdvanceHandlers[header].Handler.Handle(metadata,result),true
+      if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Advance Request:",result) }
+      return h.RouteAdvanceHandlers[header].Handler.Handle(metadata,result),true
     }
   }
   return nil,false
 }
 
-func (this *AbiHandler) abiInspectHandler(payloadHex string) (error,bool) {
-  if this.InspectCodecs[""] != nil {
-    codec := this.InspectCodecs[""]
+func (h *AbiHandler) abiInspectHandler(payloadHex string) (error,bool) {
+  if h.InspectCodecs[""] != nil {
+    codec := h.InspectCodecs[""]
     result,err := codec.Decode(payloadHex)
     if err != nil {
       return err,true
     }
-    if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Inspect Request:",result) }
-    return this.RouteInspectHandlers[""].Handler.Handle(result),true
+    if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Inspect Request:",result) }
+    return h.RouteInspectHandlers[""].Handler.Handle(result),true
   }
   if len(payloadHex) >= 66 {
     header := payloadHex[:66]
-    if this.RouteInspectHandlers[header] != nil {
-      codec := this.InspectCodecs[header]
+    if h.RouteInspectHandlers[header] != nil {
+      codec := h.InspectCodecs[header]
       result,err := codec.Decode(payloadHex)
       if err != nil {
         return err,true
       }
-      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Inspect Request:",result) }
-      return this.RouteInspectHandlers[header].Handler.Handle(result),true
+      if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Inspect Request:",result) }
+      return h.RouteInspectHandlers[header].Handler.Handle(result),true
     }
   }
   return nil,false
 }
 
-func (this *AbiHandler) abiFixedAdvanceHandler(address string) (func(*rollups.Metadata,string) (error,bool)) {
+func (h *AbiHandler) abiFixedAdvanceHandler(address string) (func(*rollups.Metadata,string) (error,bool)) {
   address = strings.ToLower(address)
   return func(metadata *rollups.Metadata, payloadHex string) (error,bool) {
-    if this.FixedAdvanceCodecs[address][""] != nil {
-      codec := this.FixedAdvanceCodecs[address][""]
+    if h.FixedAdvanceCodecs[address][""] != nil {
+      codec := h.FixedAdvanceCodecs[address][""]
       result,err := codec.Decode(payloadHex)
       if err != nil {
         return err,true
       }
-      if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Fixed Advance Request:",result) }
-      return this.FixedAddressAdvanceHandlers[address][""].Handler.Handle(metadata,result),true
+      if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Fixed Advance Request:",result) }
+      return h.FixedAddressAdvanceHandlers[address][""].Handler.Handle(metadata,result),true
     }
     if len(payloadHex) >= 66 {
       header := payloadHex[:66]
-      if this.FixedAddressAdvanceHandlers[address][header] != nil {
-        codec := this.FixedAdvanceCodecs[address][header]
+      if h.FixedAddressAdvanceHandlers[address][header] != nil {
+        codec := h.FixedAdvanceCodecs[address][header]
         result,err := codec.Decode(payloadHex)
         if err != nil {
           return err,true
         }
-        if this.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Advance Request:",result) }
-        return this.FixedAddressAdvanceHandlers[address][header].Handler.Handle(metadata,result),true
+        if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI route",header,"Advance Request:",result) }
+        return h.FixedAddressAdvanceHandlers[address][header].Handler.Handle(metadata,result),true
       }
     }
     return nil,false
   }
 }
 
-func (this *AbiHandler) SetDebug() {this.Handler.SetDebug()}
-func (this *AbiHandler) SetLogLevel(logLevel hdl.LogLevel) {this.Handler.SetLogLevel(logLevel)}
-func (this *AbiHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleDefault(fnHandle)}
-func (this *AbiHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {this.Handler.HandleInspect(fnHandle)}
-func (this *AbiHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleAdvance(fnHandle)}
-func (this *AbiHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleRollupsFixedAddresses(fnHandle)}
-func (this *AbiHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {this.Handler.HandleFixedAddress(address,fnHandle)}
-func (this *AbiHandler) SendNotice(payloadHex string) (uint64,error) {return this.Handler.SendNotice(payloadHex)}
-func (this *AbiHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return this.Handler.SendVoucher(destination,payloadHex)}
-func (this *AbiHandler) SendReport(payloadHex string) error {return this.Handler.SendReport(payloadHex)}
-func (this *AbiHandler) SendException(payloadHex string) error {return this.Handler.SendException(payloadHex)}
-func (this *AbiHandler) Run() error {return this.Handler.Run()}
-func (this *AbiHandler) InitializeRollupsAddresses(currentNetwork string) error {return this.Handler.InitializeRollupsAddresses(currentNetwork)}
+func (h *AbiHandler) SetDebug() {h.Handler.SetDebug()}
+func (h *AbiHandler) SetLogLevel(logLevel hdl.LogLevel) {h.Handler.SetLogLevel(logLevel)}
+func (h *AbiHandler) HandleDefault(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleDefault(fnHandle)}
+func (h *AbiHandler) HandleInspect(fnHandle hdl.InspectHandlerFunc) {h.Handler.HandleInspect(fnHandle)}
+func (h *AbiHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleAdvance(fnHandle)}
+func (h *AbiHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
+func (h *AbiHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
+func (h *AbiHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
+func (h *AbiHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *AbiHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
+func (h *AbiHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
+func (h *AbiHandler) Run() error {return h.Handler.Run()}
+func (h *AbiHandler) InitializeRollupsAddresses(currentNetwork string) error {return h.Handler.InitializeRollupsAddresses(currentNetwork)}

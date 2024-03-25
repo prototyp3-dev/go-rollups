@@ -20,7 +20,7 @@ func GenericHandler(payloadHex string) error {
   }
   infolog.Println("Generic request payload:", payload)
 
-  report := rollups.Report{rollups.Str2Hex("Generic " + payload + relayMessage)}
+  report := rollups.Report{Payload: rollups.Str2Hex("Generic " + payload + relayMessage)}
   _, err = rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("GenericHandler: error making http request: %s", err)
@@ -31,7 +31,7 @@ func GenericHandler(payloadHex string) error {
 
 func HandleFixed(metadata *rollups.Metadata, payloadHex string) error {
   infolog.Println("Received deposit")
-  report := rollups.Report{rollups.Str2Hex("Warning: Ignored any desposits")}
+  report := rollups.Report{Payload: rollups.Str2Hex("Warning: Ignored any desposits")}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleFixed: error making http request: %s", err)
@@ -44,7 +44,7 @@ func HandleFixed(metadata *rollups.Metadata, payloadHex string) error {
 func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
   infolog.Println("Hey, I know this address, sender is",metadata.MsgSender,"and the my address is", payloadHex)
   relayMessage = fmt.Sprint(" and the dapp address is ",payloadHex)
-  report := rollups.Report{rollups.Str2Hex("Set address relay")}
+  report := rollups.Report{Payload: rollups.Str2Hex("Set address relay")}
   _, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleFixed: error making http request: %s", err)

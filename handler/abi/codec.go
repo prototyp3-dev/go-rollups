@@ -121,24 +121,24 @@ func VoucherHeader(method string, fields []string) string {
   headerKeccak := ethgo.Keccak256([]byte(method+"("+strings.Join(fields, ",")+")"))
   return rollups.Bin2Hex(headerKeccak[:4])
 }
-func (this *Codec) Decode(payloadHex string) (map[string]interface{},error) {
+func (c *Codec) Decode(payloadHex string) (map[string]interface{},error) {
 	var result map[string]interface{}
   payloadBytes, err := rollups.Hex2Bin(payloadHex)
   if err != nil {
     return result,fmt.Errorf("Decode: %s", err)
   }
-  if len(this.Header) > 0 {
-    if payloadHex[:66] != this.Header {
+  if len(c.Header) > 0 {
+    if payloadHex[:66] != c.Header {
       return result,fmt.Errorf("Decode: Header does not match")
     }
     payloadBytes = payloadBytes[32:]
   }
 
   var fields []string
-  if this.PackedFields != nil {
-    fields = this.PackedFields
-  } else if this.Fields != nil {
-    fields = this.Fields
+  if c.PackedFields != nil {
+    fields = c.PackedFields
+  } else if c.Fields != nil {
+    fields = c.Fields
   }
 
   if len(fields) == 0 {
@@ -151,10 +151,10 @@ func (this *Codec) Decode(payloadHex string) (map[string]interface{},error) {
   // typ, _ := abi.NewType("tuple("+ strings.Join(tupleFields, ",") +")")
 
   var decoded interface{}
-  if this.PackedFields != nil {
-    decoded,err = abi.DecodePacked(this.typ, payloadBytes)
-  } else if this.Fields != nil {
-    decoded,err = abi.Decode(this.typ, payloadBytes)
+  if c.PackedFields != nil {
+    decoded,err = abi.DecodePacked(c.typ, payloadBytes)
+  } else if c.Fields != nil {
+    decoded,err = abi.Decode(c.typ, payloadBytes)
   }
   if err != nil {
     return result,fmt.Errorf("Decode: %s",err)
@@ -162,7 +162,7 @@ func (this *Codec) Decode(payloadHex string) (map[string]interface{},error) {
 
   mapResult, ok := decoded.(map[string]interface{})
   if !ok {
-    return result,fmt.Errorf("Convert decoded payload to map error")
+    return result,fmt.Errorf("convert decoded payload to map error")
   }
   // result = make([]interface{},len(mapResult))
   // for i := 0; i < len(mapResult); i += 1 {
@@ -173,18 +173,18 @@ func (this *Codec) Decode(payloadHex string) (map[string]interface{},error) {
   return mapResult,nil
 }
 
-func (this *Codec) Encode(payload interface{}) (string,error) {
+func (c *Codec) Encode(payload interface{}) (string,error) {
 	var result string
 
   var fields []string
-  if this.PackedFields != nil {
-    fields = this.PackedFields
-  } else if this.Fields != nil {
-    fields = this.Fields
+  if c.PackedFields != nil {
+    fields = c.PackedFields
+  } else if c.Fields != nil {
+    fields = c.Fields
   }
 
   var payloadMap map[string]interface{}
-  typ := this.typ
+  typ := c.typ
 
   payloadSlice, ok := payload.([]interface{})
   if ok {
@@ -210,9 +210,9 @@ func (this *Codec) Encode(payload interface{}) (string,error) {
 
   var encoded []byte
   var err error
-  if this.PackedFields != nil {
+  if c.PackedFields != nil {
     encoded,err = abi.EncodePacked(payloadMap,typ)
-  } else if this.Fields != nil {
+  } else if c.Fields != nil {
     encoded,err = abi.Encode(payloadMap,typ)
   }
   if err != nil {
@@ -220,8 +220,8 @@ func (this *Codec) Encode(payload interface{}) (string,error) {
   }
 
   result = rollups.Bin2Hex(encoded)
-  if this.Header != "" {
-    result = this.Header + result[2:]
+  if c.Header != "" {
+    result = c.Header + result[2:]
   }
   return result,nil
 }

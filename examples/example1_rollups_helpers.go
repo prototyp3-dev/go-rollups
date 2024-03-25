@@ -20,7 +20,7 @@ var (
 func HandleAdvance(data *rollups.AdvanceResponse) error {
   infolog.Println("Advance request payload ", data.Payload)
 
-  notice := rollups.Notice{data.Payload}
+  notice := rollups.Notice{Payload: data.Payload}
   res, err := rollups.SendNotice(&notice)
   if err != nil {
     return fmt.Errorf("HandleAdvance: error making http notice request: ", err)
@@ -33,7 +33,7 @@ func HandleAdvance(data *rollups.AdvanceResponse) error {
 func HandleInspect(data *rollups.InspectResponse) error {
   infolog.Println("Inspect request payload ", data.Payload)
 
-  report := rollups.Report{data.Payload}
+  report := rollups.Report{Payload: data.Payload}
   res, err := rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleInspect: error making http report request: ", err)
@@ -64,7 +64,7 @@ func Handler(response *rollups.FinishResponse) error {
 }
 
 func main() {
-  finish := rollups.Finish{"accept"}
+  finish := rollups.Finish{Status: "accept"}
 
   for true {
     infolog.Println("Sending finish")
