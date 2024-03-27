@@ -1,15 +1,17 @@
 package handler
 
 import (
-  "encoding/json"
-  "io"
-  "strconv"
-  "strings"
-  "fmt"
-  "log"
-  "os"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
 
-  "github.com/prototyp3-dev/go-rollups/rollups"
+	"github.com/prototyp3-dev/go-rollups/rollups"
 )
 
 type LogLevel uint8
@@ -294,12 +296,31 @@ func RunDebug() error {
   return LocalHandler.Run()
 }
 
+func RunDebugContext(ctx context.Context) error {
+  LocalHandler.SetDebug()
+  return LocalHandler.RunContext(ctx)
+}
+
 func Run() error {
   LocalHandler.SetLogLevel(Error)
   return LocalHandler.Run()
 }
 
+func RunContext(ctx context.Context) error {
+  LocalHandler.SetLogLevel(Error)
+  return LocalHandler.RunContext(ctx)
+}
+
+type sendFinishRetType struct {
+  Response *http.Response; 
+  Error error
+}
+
 func (h *Handler) Run() error {
+  return h.RunContext(context.Background())
+}
+
+func (h *Handler) RunContext(ctx context.Context) error {
   if rollups.GetRollupServer() == "" {
     rollups.SetRollupServer(os.Getenv("ROLLUP_HTTP_SERVER_URL"))
   }
@@ -308,36 +329,52 @@ func (h *Handler) Run() error {
   }
 
   finish := rollups.Finish{Status:"accept"}
+  sendFinishRetCh := make(chan sendFinishRetType)
 
   for {
     if h.LogLevel >= Trace {TraceLogger.Println("Sending finish")}
-    res, err := rollups.SendFinish(&finish)
-    if err != nil {
-      return fmt.Errorf("error making http request: %s", err)
-    }
-    if h.LogLevel >= Trace {TraceLogger.Println("Received finish status", strconv.Itoa(res.StatusCode))}
+    go func() {
+      fRes,fErr := rollups.SendFinish(&finish)
+      sendFinishRetCh <- sendFinishRetType{fRes,fErr}
+    }()
+    var sendFinishRet sendFinishRetType
     
-    if (res.StatusCode == 202){
-      if h.LogLevel >= Trace {TraceLogger.Println("No pending rollup request, trying again")}
-    } else {
-
-      resBody, err := io.ReadAll(res.Body)
+		select {
+		case <-ctx.Done():
+      errMsg := fmt.Errorf("context done: %s", ctx.Err())
+      ErrorLogger.Println(errMsg)
+      return errMsg
+    case sendFinishRet = <-sendFinishRetCh:
+      res := sendFinishRet.Response
+      err := sendFinishRet.Error
+      // res, err := rollups.SendFinish(&finish)
       if err != nil {
-        return fmt.Errorf("error: could not read response body: %s", err)
+        return fmt.Errorf("error making http request: %s", err)
       }
-      if h.LogLevel >= Debug {DebugLogger.Println("Received request",string(resBody))}
+      if h.LogLevel >= Trace {TraceLogger.Println("Received finish status", strconv.Itoa(res.StatusCode))}
       
-      var response rollups.FinishResponse
-      err = json.Unmarshal(resBody, &response)
-      if err != nil {
-        return fmt.Errorf("error: unmarshaling body: %s", err)
-      }
+      if (res.StatusCode == 202){
+        if h.LogLevel >= Trace {TraceLogger.Println("No pending rollup request, trying again")}
+      } else {
 
-      finish.Status = "accept"
-      err = h.internalHandleFinish(&response)
-      if err != nil {
-        if h.LogLevel >= Error {ErrorLogger.Println("Error:", err)}
-        finish.Status = "reject"
+        resBody, err := io.ReadAll(res.Body)
+        if err != nil {
+          return fmt.Errorf("error: could not read response body: %s", err)
+        }
+        if h.LogLevel >= Debug {DebugLogger.Println("Received request",string(resBody))}
+        
+        var response rollups.FinishResponse
+        err = json.Unmarshal(resBody, &response)
+        if err != nil {
+          return fmt.Errorf("error: unmarshaling body: %s", err)
+        }
+
+        finish.Status = "accept"
+        err = h.internalHandleFinish(&response)
+        if err != nil {
+          if h.LogLevel >= Error {ErrorLogger.Println("Error:", err)}
+          finish.Status = "reject"
+        }
       }
     }
   }
