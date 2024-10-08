@@ -1,7 +1,7 @@
 # Cartesi Rollups GO high level framework
 
 ```
-This works for Cartesi Rollups version 1.0.x
+This works for Cartesi Rollups Node version 1.5.x (cartesi cli version 0.16.x)
 ```
 
 Create cartesi rolllups DApp with codes like:
@@ -33,7 +33,7 @@ func main() {
 
 Check the [examples](examples) for more use cases. 
 
-You will need [sunodo cli](https://github.com/sunodo/sunodo/tree/main/apps/cli) to create and run the example, and [curl](https://curl.se/) to interact with the dapp.
+You will need [cartesi cli](https://github.com/cartesi/cli) to create and run the example, and [curl](https://curl.se/) to interact with the dapp.
 
 To run an example 
 
@@ -41,14 +41,14 @@ To run an example
 cd examples
 rm -rf example.go
 ln -sr example1_rollups_helpers.go example.go
-sunodo build
-sunodo run
+cartesi build
+cartesi run
 ```
 
 You can send inputs with (account and private key of anvil test accounts)
 
 ```shell
-sunodo send generic --input="test"
+cartesi send generic --input="test"
 ```
 
 Send inspects with
