@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+  	"math/big"
 )
 
 type FinishResponse struct {
@@ -21,11 +22,13 @@ type AdvanceResponse struct {
 }
 
 type Metadata struct {
-	MsgSender   string `json:"msg_sender"`
-	EpochIndex  uint64 `json:"epoch_index"`
-	InputIndex  uint64 `json:"input_index"`
-	BlockNumber uint64 `json:"block_number"`
-	Timestamp   uint64 `json:"timestamp"`
+	CahinId     	uint64 `json:"chain_id"`
+	AppContract 	string `json:"app_contract"`
+	MsgSender   	string `json:"msg_sender"`
+	InputIndex  	uint64 `json:"input_index"`
+	BlockNumber 	uint64 `json:"block_number"`
+	BlockTimestamp	uint64 `json:"block_timestamp"`
+	PrevRandao   	string `json:"prev_randao"`
 }
 
 type Finish struct {
@@ -43,6 +46,7 @@ type Notice struct {
 type Voucher struct {
 	Destination string `json:"destination"`
 	Payload     string `json:"payload"`
+	Value     	*big.Int `json:"value"`
 }
 
 type Exception struct {

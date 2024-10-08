@@ -12,6 +12,8 @@ import (
 
 type Address = ethgo.Address //[20]byte
 
+var CodecHeaderLength = 10
+
 func Address2Hex(bin Address) string {
   return rollups.Bin2Hex(bin[:])
 }
@@ -34,7 +36,6 @@ func Bin2Address(addrBytes []byte) (Address,error) {
 }
 
 type Codec struct {
-  Framework string
   Method string
   Header string
   PackedFields []string
@@ -44,9 +45,8 @@ type Codec struct {
 
 func (c Codec) String() string {
   atts := make([]string,0)
-  if c.Header != "" && c.Framework != "" &&c.Method != "" {
+  if c.Header != "" && c.Method != "" {
     atts = append(atts, fmt.Sprintf("Header(%s)",c.Header))
-    atts = append(atts, fmt.Sprintf("Framework(%s)",c.Framework))
     atts = append(atts, fmt.Sprintf("Method(%s)",c.Method))
   }
   if len(c.Fields) > 0 {
@@ -63,12 +63,11 @@ func NewPackedCodec(fields []string) *Codec {
   return &Codec{PackedFields: fields, typ: typ}
 }
 
-func NewHeaderPackedCodec(framework string, method string, fields []string) *Codec {
+func NewHeaderPackedCodec(method string, fields []string) *Codec {
   codec := NewPackedCodec(fields)
   cleanFields := CleanFields(codec.typ)
-  header := CodecHeader(framework, method, cleanFields)
+  header := CodecHeader(method, cleanFields)
   codec.Header = header
-  codec.Framework = framework
   codec.Method = method
   return codec
 }
@@ -78,12 +77,11 @@ func NewCodec(fields []string) *Codec {
   return &Codec{Fields: fields, typ: typ}
 }
 
-func NewHeaderCodec(framework string, method string, fields []string) *Codec {
+func NewHeaderCodec(method string, fields []string) *Codec {
   codec := NewCodec(fields)
   cleanFields := CleanFields(codec.typ)
-  header := CodecHeader(framework, method, cleanFields)
+  header := CodecHeader(method, cleanFields)
   codec.Header = header
-  codec.Framework = framework
   codec.Method = method
   return codec
 }
@@ -100,27 +98,15 @@ func CleanFields(typ *abi.Type) []string {
   return cleanFields
 }
 
-func CodecHeader(framework string, method string, fields []string) string {
-  frameworkeccak := ethgo.Keccak256([]byte(framework))
-  methodkeccak := ethgo.Keccak256([]byte(method))
-  fieldskeccak := ethgo.Keccak256([]byte("("+strings.Join(fields, ",")+")"))
-  headerAllbytes := append(frameworkeccak, methodkeccak...)
-  headerAllbytes = append(headerAllbytes, fieldskeccak...)
-  return rollups.Bin2Hex(ethgo.Keccak256(headerAllbytes))
-}
-
-func NewVoucherCodec(method string, fields []string) *Codec {
-  codec := NewCodec(fields)
-  header := VoucherHeader(method, codec.Fields)
-  codec.Header = header
-  codec.Method = method
-  return codec
-}
-
-func VoucherHeader(method string, fields []string) string {
+func CodecHeader(method string, fields []string) string {
   headerKeccak := ethgo.Keccak256([]byte(method+"("+strings.Join(fields, ",")+")"))
   return rollups.Bin2Hex(headerKeccak[:4])
 }
+
+func NewVoucherCodec(method string, fields []string) *Codec {
+  return NewHeaderCodec(method, fields)
+}
+
 func (c *Codec) Decode(payloadHex string) (map[string]interface{},error) {
 	var result map[string]interface{}
   payloadBytes, err := rollups.Hex2Bin(payloadHex)

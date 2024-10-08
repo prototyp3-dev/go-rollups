@@ -1,9 +1,11 @@
 package abihandler
 
 import (
-  "strings"
-  hdl "github.com/prototyp3-dev/go-rollups/handler"
-  "github.com/prototyp3-dev/go-rollups/rollups"
+	"math/big"
+	"strings"
+
+	hdl "github.com/prototyp3-dev/go-rollups/handler"
+	"github.com/prototyp3-dev/go-rollups/rollups"
 )
 
 type AdvanceMapHandlerFunc func(*rollups.Metadata,map[string]interface{}) error
@@ -47,8 +49,8 @@ func (h *AbiHandler) HandleAdvanceRoute(routeCodec *Codec, fnHandle AdvanceMapHa
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
-  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != 66 {
-    panic("abi handler: codec header format")
+  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != CodecHeaderLength {
+    panic("abi handler: codec header format" )
   }
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
     panic("abi handler: ambiguous codec fields")
@@ -75,7 +77,7 @@ func (h *AbiHandler) HandleFixedAddressAdvance(address string, routeCodec *Codec
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
-  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != 66 {
+  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != CodecHeaderLength {
     panic("abi handler: codec header format")
   }
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
@@ -116,7 +118,7 @@ func (h *AbiHandler) HandleInspectRoute(routeCodec *Codec, fnHandle InspectMapHa
 	if fnHandle == nil {
 		panic("abi handler: nil handler")
 	}
-  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != 66 {
+  if len(routeCodec.Header) > 0 && len(routeCodec.Header) != CodecHeaderLength {
     panic("abi handler: codec header format")
   }
   if len(routeCodec.Fields) != 0 && len(routeCodec.PackedFields) != 0 {
@@ -150,8 +152,8 @@ func (h *AbiHandler) abiAdvanceHandler(metadata *rollups.Metadata, payloadHex st
     if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Advance Request:",result) }
     return h.RouteAdvanceHandlers[""].Handler.Handle(metadata,result),true
   }
-  if len(payloadHex) >= 66 {
-    header := payloadHex[:66]
+  if len(payloadHex) >= CodecHeaderLength {
+    header := payloadHex[:CodecHeaderLength]
     if h.RouteAdvanceHandlers[header] != nil {
       codec := h.AdvanceCodecs[header]
       result,err := codec.Decode(payloadHex)
@@ -175,8 +177,8 @@ func (h *AbiHandler) abiInspectHandler(payloadHex string) (error,bool) {
     if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Inspect Request:",result) }
     return h.RouteInspectHandlers[""].Handler.Handle(result),true
   }
-  if len(payloadHex) >= 66 {
-    header := payloadHex[:66]
+  if len(payloadHex) >= CodecHeaderLength {
+    header := payloadHex[:CodecHeaderLength]
     if h.RouteInspectHandlers[header] != nil {
       codec := h.InspectCodecs[header]
       result,err := codec.Decode(payloadHex)
@@ -202,8 +204,8 @@ func (h *AbiHandler) abiFixedAdvanceHandler(address string) (func(*rollups.Metad
       if h.Handler.LogLevel >= hdl.Trace {hdl.TraceLogger.Println("Received ABI no header Fixed Advance Request:",result) }
       return h.FixedAddressAdvanceHandlers[address][""].Handler.Handle(metadata,result),true
     }
-    if len(payloadHex) >= 66 {
-      header := payloadHex[:66]
+    if len(payloadHex) >= CodecHeaderLength {
+      header := payloadHex[:CodecHeaderLength]
       if h.FixedAddressAdvanceHandlers[address][header] != nil {
         codec := h.FixedAdvanceCodecs[address][header]
         result,err := codec.Decode(payloadHex)
@@ -226,7 +228,7 @@ func (h *AbiHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.H
 func (h *AbiHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
 func (h *AbiHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
 func (h *AbiHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
-func (h *AbiHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *AbiHandler) SendVoucher(destination string, payloadHex string, value *big.Int) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex,value)}
 func (h *AbiHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
 func (h *AbiHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
 func (h *AbiHandler) Run() error {return h.Handler.Run()}
