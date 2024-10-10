@@ -222,11 +222,7 @@ func (h *Handler) SendNotice(payloadHex string) (uint64,error) {
 }
 
 func (h *Handler) SendVoucher(destination string, payloadHex string, value *big.Int) (uint64,error) {
-  voucherValue := value
-  if voucherValue == nil {
-    voucherValue = new(big.Int)
-  }
-  voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex, Value: voucherValue}
+  voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex, Value: value}
   if h.LogLevel >= Trace {TraceLogger.Println("Sending voucher status",voucher)}
   res, err := rollups.SendVoucher(voucher)
   if err != nil {

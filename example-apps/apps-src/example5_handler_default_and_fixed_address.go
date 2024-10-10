@@ -48,7 +48,7 @@ func HandleOperator(metadata *rollups.Metadata, payloadHex string) error {
     return fmt.Errorf("HandleOperator: hex error decoding payload:", err)
   }
   operatorMessage = fmt.Sprint(" and the message is ",payloadStr)
-  report := rollups.Report{Payload: rollups.Str2Hex("Set address operator")}
+  report := rollups.Report{Payload: rollups.Str2Hex("Set operator message")}
   _, err = rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleFixed: error making http request: %s", err)
@@ -61,9 +61,11 @@ func HandleOperator(metadata *rollups.Metadata, payloadHex string) error {
 func main() {
   handler.InitializeRollupsAddresses("localhost")
 
+  operator := "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+
   handler.HandleDefault(GenericHandler)
   handler.HandleRollupsFixedAddresses(HandleFixed)
-  handler.HandleFixedAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", HandleOperator)
+  handler.HandleFixedAddress(operator, HandleOperator)
 
   err := handler.RunDebug()
   if err != nil {

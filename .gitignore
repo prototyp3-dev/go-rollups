@@ -1,4 +1,5 @@
 .cartesi
-examples/go.mod
-examples/go.sum
-examples/example.go
+example-apps/go.mod
+example-apps/go.sum
+example-apps/app.go
+example-apps/app

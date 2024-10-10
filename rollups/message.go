@@ -48,6 +48,13 @@ type Voucher struct {
 	Payload     string `json:"payload"`
 	Value     	*big.Int `json:"value"`
 }
+func (v Voucher) MarshalJSON() ([]byte, error) {
+  return json.Marshal(struct{
+	Destination string `json:"destination"`
+	Payload     string `json:"payload"`
+	Value     	string `json:"value"`
+  }{v.Destination,v.Payload,Bin2Hex(PadBytes(v.Value.Bytes(),32))})
+}
 
 type Exception struct {
 	Payload string `json:"payload"`
@@ -105,6 +112,10 @@ func SendNotice(notice *Notice) (*http.Response, error) {
 }
 
 func SendVoucher(voucher *Voucher) (*http.Response, error) {
+	if voucher.Value == nil {
+	  voucher.Value = new(big.Int)
+	}
+
 	body, err := json.Marshal(voucher)
 	if err != nil {
 		return &http.Response{}, err

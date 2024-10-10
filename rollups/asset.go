@@ -62,9 +62,9 @@ func DecodeErc20Deposit(payloadHex string) (Erc20Deposit,error) {
 	}
 
   amount := new(big.Int)
-  amount.SetBytes(bin[41:73])
+  amount.SetBytes(bin[40:72])
 
-  return Erc20Deposit{Depositor:Bin2Hex(bin[21:41]), TokenAddress:Bin2Hex(bin[1:21]), Amount:amount, Data:bin[73:]},nil
+  return Erc20Deposit{Depositor:Bin2Hex(bin[20:40]), TokenAddress:Bin2Hex(bin[:20]), Amount:amount, Data:bin[72:]},nil
 }
 
 func DecodeErc721Deposit(payloadHex string) (Erc721Deposit,error) {
@@ -140,9 +140,8 @@ func DecodeErc1155BatchDeposit(payloadHex string) (Erc1155BatchDeposit,error) {
   return Erc1155BatchDeposit{Depositor:depositor, TokenAddress:token, TokenIds:idList, Amounts:amountList, BaseLayerData:blData, ExecLayerData:elData}, nil
 }
 
-func EtherWithdralVoucher(Sender string, Receiver string, Amount *big.Int) Voucher {
-  payload := "0x522f6815" + hex.EncodeToString(append(Address2Bin(Receiver),PadBytes(Amount.Bytes(),32)...))
-  return Voucher{Destination: Sender, Payload: payload}
+func EtherWithdralVoucher(Receiver string, Amount *big.Int) Voucher {
+  return Voucher{Destination: Receiver, Payload: "0x", Value: Amount}
 }
 
 func Erc20TransferVoucher(Receiver string, TokenAddress string, Amount *big.Int) Voucher {
