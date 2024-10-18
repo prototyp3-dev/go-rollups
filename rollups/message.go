@@ -22,7 +22,7 @@ type AdvanceResponse struct {
 }
 
 type Metadata struct {
-	CahinId     	uint64 `json:"chain_id"`
+	ChainId     	uint64 `json:"chain_id"`
 	AppContract 	string `json:"app_contract"`
 	MsgSender   	string `json:"msg_sender"`
 	InputIndex  	uint64 `json:"input_index"`

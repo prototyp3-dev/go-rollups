@@ -27,11 +27,11 @@ const (
 )
 
 type NetworkAddresses struct {
-  EtherPortalAddress string         `json:"ETHER_PORTAL_ADDRESS"`
-  Erc20PortalAddress string         `json:"ERC20_PORTAL_ADDRESS"`
-  Erc721PortalAddress string        `json:"ERC721_PORTAL_ADDRESS"`
-  Erc1155SinglePortalAddress string `json:"ERC1155_SINGLE_PORTAL_ADDRESS"`
-  Erc1155BatchPortalAddress string  `json:"ERC1155_BATCH_PORTAL_ADDRESS"`
+  EtherPortalAddress string         `json:"EtherPortal"`
+  Erc20PortalAddress string         `json:"ERC20Portal"`
+  Erc721PortalAddress string        `json:"ERC721Portal"`
+  Erc1155SinglePortalAddress string `json:"ERC1155SinglePortal"`
+  Erc1155BatchPortalAddress string  `json:"ERC1155BatchPortal"`
 }
 
 type AdvanceHandlerFunc func(*rollups.Metadata,string) error

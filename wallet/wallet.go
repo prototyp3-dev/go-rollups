@@ -596,9 +596,9 @@ func (w *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[str
   }
 
   // Voucher
-  _, err = w.handler.SendVoucher(metadata.AppContract,"",amount)
+  _, err = w.handler.SendVoucher(addr.String(),"0x",amount)
   if err != nil {
-    return fmt.Errorf("EtherPortalDeposit: error making http request: %s", err)
+    return fmt.Errorf("EtherWithdraw: error making http request: %s", err)
   }
 
   // Notice
@@ -781,7 +781,7 @@ func (w *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadMap 
   }
 
   if len(tokenIds) != len(amounts) {
-    message := "Erc1155BatchPortalDeposit: parameters error"
+    message := "Erc1155BatchWithdraw: parameters error"
     return fmt.Errorf(message)
   }
 
@@ -799,7 +799,7 @@ func (w *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadMap 
   for i := 0 ; i < numTokens ; i++ {
     err = wallet.WithdrawErc1155(tokenAddress, tokenIds[i], amounts[i])
     if err != nil {
-      return fmt.Errorf("Erc1155BatchPortalDeposit: error adding id: %s", err)
+      return fmt.Errorf("Erc1155BatchWithdraw: error adding id: %s", err)
     }
     negIds = append(negIds,new(big.Int).Neg(tokenIds[i]))
     negAmounts = append(negAmounts,new(big.Int).Neg(amounts[i]))
@@ -1074,7 +1074,7 @@ func (w *WalletApp) TransferErc1155Batch(tokenAddress abihandler.Address, sender
   for i := 0 ; i < numTokens ; i++ {
     err := walletReceiver.DepositErc1155(tokenAddress, tokenIds[i], amounts[i])
     if err != nil {
-      return fmt.Errorf("Erc1155BatchPortalDeposit: error adding id: %s", err)
+      return fmt.Errorf("TransferErc1155: error adding id: %s", err)
     }
   }
 

@@ -114,10 +114,10 @@ func (c *Codec) Decode(payloadHex string) (map[string]interface{},error) {
     return result,fmt.Errorf("Decode: %s", err)
   }
   if len(c.Header) > 0 {
-    if payloadHex[:66] != c.Header {
+    if payloadHex[:CodecHeaderLength] != c.Header {
       return result,fmt.Errorf("Decode: Header does not match")
     }
-    payloadBytes = payloadBytes[32:]
+    payloadBytes = payloadBytes[4:]
   }
 
   var fields []string
