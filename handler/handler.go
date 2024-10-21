@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-  "math/big"
 
 	"github.com/prototyp3-dev/go-rollups/rollups"
 )

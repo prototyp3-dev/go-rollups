@@ -3,6 +3,7 @@ package wallet
 import (
   "os"
   "fmt"
+  "errors"
   "math/big"
   "log"
   "encoding/json"
@@ -382,7 +383,7 @@ func (w *WalletApp) EtherPortalDeposit(metadata *rollups.Metadata, payloadMap ma
 
   if !ok1 || !ok2 {
     message := "EtherPortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   wallet := w.GetWallet(depositor)
@@ -418,7 +419,7 @@ func (w *WalletApp) Erc20PortalDeposit(metadata *rollups.Metadata, payloadMap ma
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc20PortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   wallet := w.GetWallet(depositor)
@@ -452,7 +453,7 @@ func (w *WalletApp) Erc721PortalDeposit(metadata *rollups.Metadata, payloadMap m
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc721PortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   wallet := w.GetWallet(depositor)
@@ -487,7 +488,7 @@ func (w *WalletApp) Erc1155SinglePortalDeposit(metadata *rollups.Metadata, paylo
 
   if !ok1 || !ok2 || !ok3 || !ok4 {
     message := "Erc1155SinglePortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   wallet := w.GetWallet(depositor)
@@ -521,7 +522,7 @@ func (w *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, payloa
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc1155BatchPortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   valueMap, err := erc1155BatchValueCodec.Decode(rollups.Bin2Hex(valueBytes))
@@ -533,12 +534,12 @@ func (w *WalletApp) Erc1155BatchPortalDeposit(metadata *rollups.Metadata, payloa
   
   if !ok4 || !ok5 {
     message := "Erc1155BatchPortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   if len(tokenIds) != len(amounts) {
     message := "Erc1155BatchPortalDeposit: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
   numTokens := len(tokenIds)
 
@@ -579,7 +580,7 @@ func (w *WalletApp) EtherWithdraw(metadata *rollups.Metadata, payloadMap map[str
 
   if !ok1 || !ok2 {
     message := "EtherWithdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   addr,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -624,7 +625,7 @@ func (w *WalletApp) Erc20Withdraw(metadata *rollups.Metadata, payloadMap map[str
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc20Withdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   addr,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -674,7 +675,7 @@ func (w *WalletApp) Erc721Withdraw(metadata *rollups.Metadata, payloadMap map[st
 
   if !ok1 || !ok2 || !ok3 {
     message := "Erc721Withdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   addr,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -725,7 +726,7 @@ func (w *WalletApp) Erc1155SingleWithdraw(metadata *rollups.Metadata, payloadMap
 
   if !ok1 || !ok2 || !ok3 || !ok4 {
     message := "Erc1155SingleWithdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   addr,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -777,12 +778,12 @@ func (w *WalletApp) Erc1155BatchWithdraw(metadata *rollups.Metadata, payloadMap 
 
   if !ok1 || !ok2 || !ok3 || !ok4 {
     message := "Erc1155BatchWithdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   if len(tokenIds) != len(amounts) {
     message := "Erc1155BatchWithdraw: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   addr,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -841,7 +842,7 @@ func (w *WalletApp) TransferEtherCodec(metadata *rollups.Metadata, payloadMap ma
   // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 {
     message := "TransferEtherCodec: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -901,7 +902,7 @@ func (w *WalletApp) TransferErc20Codec(metadata *rollups.Metadata, payloadMap ma
   // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 {
     message := "TransferErc20Codec: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -961,7 +962,7 @@ func (w *WalletApp) TransferErc721Codec(metadata *rollups.Metadata, payloadMap m
   // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 {
     message := "TransferErc721Codec: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -1022,7 +1023,7 @@ func (w *WalletApp) TransferErc1155SingleCodec(metadata *rollups.Metadata, paylo
   // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 || !ok4 {
     message := "TransferErc1155SingleCodec: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
@@ -1041,7 +1042,7 @@ func (w *WalletApp) TransferErc1155BatchCodec(metadata *rollups.Metadata, payloa
   // dataBytes, ok3 := payloadMap["2"].([]byte)
   if !ok1 || !ok2 || !ok3 || !ok4 {
     message := "TransferErc1155BatchCodec: parameters error"
-    return fmt.Errorf(message)
+    return errors.New(message)
   }
 
   sender,err := abihandler.Hex2Address(metadata.MsgSender)
