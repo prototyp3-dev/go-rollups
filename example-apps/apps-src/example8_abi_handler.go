@@ -75,7 +75,7 @@ func HandleSet(metadata *rollups.Metadata, payloadMap map[string]interface{}) er
     return fmt.Errorf("HandleSet: error making http request: %s", err)
   }
 
-  noticePayload,err := noticeCodec.Encode([]interface{}{metadata.Timestamp,key,value})
+  noticePayload,err := noticeCodec.Encode([]interface{}{metadata.BlockTimestamp,key,value})
   if err != nil {
     return fmt.Errorf("HandleSet: encoding notice: %s", err)
   }
@@ -96,10 +96,10 @@ func main() {
 
   noticeCodec = abihandler.NewCodec([]string{"uint","string","string"})
 
-  setCodec := abihandler.NewHeaderCodec("dapp","set",[]string{"string key","string value"})
+  setCodec := abihandler.NewHeaderCodec("dapp.set",[]string{"string key","string value"})
   handler.HandleAdvanceRoute(setCodec, HandleSet)
 
-  getCodec := abihandler.NewHeaderCodec("dapp","get",[]string{"string"})
+  getCodec := abihandler.NewHeaderCodec("dapp.get",[]string{"string"})
   handler.HandleAdvanceRoute(getCodec, HandleAdvanceGet)
   handler.HandleInspectRoute(getCodec, HandleGet)
 

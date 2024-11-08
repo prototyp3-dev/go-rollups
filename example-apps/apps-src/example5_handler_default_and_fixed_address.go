@@ -11,7 +11,7 @@ import (
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
 
-var relayMessage string
+var operatorMessage string
 
 func GenericHandler(payloadHex string) error {
   payload, err := rollups.Hex2Str(payloadHex)
@@ -20,7 +20,7 @@ func GenericHandler(payloadHex string) error {
   }
   infolog.Println("Generic request payload:", payload)
 
-  report := rollups.Report{Payload: rollups.Str2Hex("Generic " + payload + relayMessage)}
+  report := rollups.Report{Payload: rollups.Str2Hex("Generic " + payload + operatorMessage)}
   _, err = rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("GenericHandler: error making http request: %s", err)
@@ -41,11 +41,15 @@ func HandleFixed(metadata *rollups.Metadata, payloadHex string) error {
 }
 
 
-func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
-  infolog.Println("Hey, I know this address, sender is",metadata.MsgSender,"and the my address is", payloadHex)
-  relayMessage = fmt.Sprint(" and the dapp address is ",payloadHex)
-  report := rollups.Report{Payload: rollups.Str2Hex("Set address relay")}
-  _, err := rollups.SendReport(&report)
+func HandleOperator(metadata *rollups.Metadata, payloadHex string) error {
+  infolog.Println("Hey, I know this address, sender is",metadata.MsgSender,"and the message is", payloadHex)
+  payloadStr, err := rollups.Hex2Str(payloadHex)
+  if err != nil {
+    return fmt.Errorf("HandleOperator: hex error decoding payload:", err)
+  }
+  operatorMessage = fmt.Sprint(" and the message is ",payloadStr)
+  report := rollups.Report{Payload: rollups.Str2Hex("Set operator message")}
+  _, err = rollups.SendReport(&report)
   if err != nil {
     return fmt.Errorf("HandleFixed: error making http request: %s", err)
   }
@@ -57,9 +61,11 @@ func HandleRelay(metadata *rollups.Metadata, payloadHex string) error {
 func main() {
   handler.InitializeRollupsAddresses("localhost")
 
+  operator := "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+
   handler.HandleDefault(GenericHandler)
   handler.HandleRollupsFixedAddresses(HandleFixed)
-  handler.HandleFixedAddress(handler.RollupsAddresses.DappAddressRelay, HandleRelay)
+  handler.HandleFixedAddress(operator, HandleOperator)
 
   err := handler.RunDebug()
   if err != nil {

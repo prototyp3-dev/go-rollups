@@ -2,6 +2,7 @@ package urihandler
 
 import (
   "regexp"
+  "math/big"
   hdl "github.com/prototyp3-dev/go-rollups/handler"
   "github.com/prototyp3-dev/go-rollups/rollups"
 )
@@ -160,7 +161,7 @@ func (h *UriHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.H
 func (h *UriHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
 func (h *UriHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
 func (h *UriHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
-func (h *UriHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *UriHandler) SendVoucher(destination string, payloadHex string, value *big.Int) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex,value)}
 func (h *UriHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
 func (h *UriHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
 func (h *UriHandler) Run() error {return h.Handler.Run()}

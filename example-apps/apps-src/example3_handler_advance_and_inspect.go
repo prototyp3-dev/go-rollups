@@ -27,7 +27,7 @@ func HandleAdvance(metadata *rollups.Metadata, payloadHex string) error {
     return fmt.Errorf("HandleAdvance: error making http request: %s", err)
   }
  
-  body, err := ioutil.ReadAll(res.Body)
+  body, err := io.ReadAll(res.Body)
   if err != nil {
     return fmt.Errorf("HandleAdvance: could not read response body: %s", err)
   }

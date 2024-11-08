@@ -2,6 +2,7 @@ package jsonhandler
 
 import (
   "encoding/json"
+  "math/big"
 
   hdl "github.com/prototyp3-dev/go-rollups/handler"
   "github.com/prototyp3-dev/go-rollups/rollups"
@@ -126,7 +127,7 @@ func (h *JsonHandler) HandleAdvance(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.
 func (h *JsonHandler) HandleRollupsFixedAddresses(fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleRollupsFixedAddresses(fnHandle)}
 func (h *JsonHandler) HandleFixedAddress(address string, fnHandle hdl.AdvanceHandlerFunc) {h.Handler.HandleFixedAddress(address,fnHandle)}
 func (h *JsonHandler) SendNotice(payloadHex string) (uint64,error) {return h.Handler.SendNotice(payloadHex)}
-func (h *JsonHandler) SendVoucher(destination string, payloadHex string) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex)}
+func (h *JsonHandler) SendVoucher(destination string, payloadHex string, value *big.Int) (uint64,error) {return h.Handler.SendVoucher(destination,payloadHex,value)}
 func (h *JsonHandler) SendReport(payloadHex string) error {return h.Handler.SendReport(payloadHex)}
 func (h *JsonHandler) SendException(payloadHex string) error {return h.Handler.SendException(payloadHex)}
 func (h *JsonHandler) Run() error {return h.Handler.Run()}

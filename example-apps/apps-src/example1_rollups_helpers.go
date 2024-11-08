@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
   "strconv" 
   "fmt"
   "log"
@@ -64,6 +64,10 @@ func Handler(response *rollups.FinishResponse) error {
 }
 
 func main() {
+  if rollups.GetRollupServer() == "" {
+    rollups.SetRollupServer(os.Getenv("ROLLUP_HTTP_SERVER_URL"))
+  }
+  
   finish := rollups.Finish{Status: "accept"}
 
   for true {
@@ -78,7 +82,7 @@ func main() {
       infolog.Println("No pending rollup request, trying again")
     } else {
 
-      resBody, err := ioutil.ReadAll(res.Body)
+      resBody, err := io.ReadAll(res.Body)
       if err != nil {
         errlog.Panicln("Error: could not read response body: ", err)
       }

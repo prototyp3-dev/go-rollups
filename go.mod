@@ -1,6 +1,6 @@
 module github.com/prototyp3-dev/go-rollups
 
-go 1.20
+go 1.23
 
 require (
 	github.com/lynoferraz/abigo v0.0.2

@@ -1,15 +1,15 @@
 package main
 
 import (
-  "fmt"
-  "log"
-  "os"
-  "math/big"
-  "encoding/json"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/big"
+	"os"
 
-  "github.com/prototyp3-dev/go-rollups/rollups"
-  "github.com/prototyp3-dev/go-rollups/handler/abi"
-  "github.com/prototyp3-dev/go-rollups/wallet"
+	"github.com/prototyp3-dev/go-rollups/handler/abi"
+	"github.com/prototyp3-dev/go-rollups/rollups"
+	"github.com/prototyp3-dev/go-rollups/wallet"
 )
 
 var infolog = log.New(os.Stderr, "[ info ]  ", log.Lshortfile)
@@ -145,7 +145,7 @@ func main() {
   myApp.dappWallet = wallet.NewWalletApp();
   myApp.dappWallet.SetAbiHandler(appHandler)
 
-  // setups the dapp relay and fixed portal deposit routes
+  // setups fixed portal deposit routes
   //   overrides any fixed address handler
   //   and extra routes to control assets
   myApp.dappWallet.SetupRoutes([]wallet.WalletRoute{
@@ -154,9 +154,9 @@ func main() {
     wallet.TransferEtherAdvanceRoute,
     wallet.BalanceInspectRoute,wallet.BalanceUriInspectRoute})
 
-  appHandler.HandleAdvanceRoute(abihandler.NewHeaderCodec("dapp","fee",[]string{}), myApp.PayFee)
-  appHandler.HandleFixedAddressAdvance(abihandler.Address2Hex(developerAddress),abihandler.NewHeaderCodec("dapp","changeFee",[]string{"uint256 fee"}), myApp.ChangeFee)
-  appHandler.HandleInspectRoute(abihandler.NewHeaderCodec("dapp","fee",[]string{"address address"}), myApp.GetFee)
+  appHandler.HandleAdvanceRoute(abihandler.NewHeaderCodec("dapp.fee",[]string{}), myApp.PayFee)
+  appHandler.HandleFixedAddressAdvance(abihandler.Address2Hex(developerAddress),abihandler.NewHeaderCodec("dapp.changeFee",[]string{"uint256 fee"}), myApp.ChangeFee)
+  appHandler.HandleInspectRoute(abihandler.NewHeaderCodec("dapp.fee",[]string{"address address"}), myApp.GetFee)
   myApp.dappWallet.UriHandler().HandleInspectRoute("/fee/:address", myApp.GetFeeUri)
   
   appHandler.HandleDefault(myApp.HandleWrongWay)

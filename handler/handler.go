@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+  "math/big"
 
 	"github.com/prototyp3-dev/go-rollups/rollups"
 )
@@ -26,12 +27,11 @@ const (
 )
 
 type NetworkAddresses struct {
-  DappAddressRelay string           `json:"DAPP_RELAY_ADDRESS"`
-  EtherPortalAddress string         `json:"ETHER_PORTAL_ADDRESS"`
-  Erc20PortalAddress string         `json:"ERC20_PORTAL_ADDRESS"`
-  Erc721PortalAddress string        `json:"ERC721_PORTAL_ADDRESS"`
-  Erc1155SinglePortalAddress string `json:"ERC1155_SINGLE_PORTAL_ADDRESS"`
-  Erc1155BatchPortalAddress string  `json:"ERC1155_BATCH_PORTAL_ADDRESS"`
+  EtherPortalAddress string         `json:"EtherPortal"`
+  Erc20PortalAddress string         `json:"ERC20Portal"`
+  Erc721PortalAddress string        `json:"ERC721Portal"`
+  Erc1155SinglePortalAddress string `json:"ERC1155SinglePortal"`
+  Erc1155BatchPortalAddress string  `json:"ERC1155BatchPortal"`
 }
 
 type AdvanceHandlerFunc func(*rollups.Metadata,string) error
@@ -221,8 +221,8 @@ func (h *Handler) SendNotice(payloadHex string) (uint64,error) {
   return indexRes.Index,nil
 }
 
-func (h *Handler) SendVoucher(destination string, payloadHex string) (uint64,error) {
-  voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex}
+func (h *Handler) SendVoucher(destination string, payloadHex string, value *big.Int) (uint64,error) {
+  voucher := &rollups.Voucher{Destination: destination, Payload: payloadHex, Value: value}
   if h.LogLevel >= Trace {TraceLogger.Println("Sending voucher status",voucher)}
   res, err := rollups.SendVoucher(voucher)
   if err != nil {
@@ -456,21 +456,12 @@ func InitializeRollupsAddresses(currentNetwork string) error {
   if KnownRollupsAddresses != nil {
     return nil
   }
-  var result map[string]interface{}
-  json.Unmarshal([]byte(networks), &result)
 
-  if result[currentNetwork] == nil {
-    panic("InitializeRollupsAddresses: Unknown network")
-  }
-
-  jsonNetwork, _ := json.Marshal(result[currentNetwork])
-
-  err := json.Unmarshal(jsonNetwork, &RollupsAddresses)
+  err := json.Unmarshal([]byte(rollupsAddresses), &RollupsAddresses)
   if err != nil {
     panic(fmt.Sprint("InitializeRollupsAddresses: error unmarshaling network: ", err))
   }
   KnownRollupsAddresses = make(map[string]bool)
-  KnownRollupsAddresses[strings.ToLower(RollupsAddresses.DappAddressRelay)] = true
   KnownRollupsAddresses[strings.ToLower(RollupsAddresses.EtherPortalAddress)] = true
   KnownRollupsAddresses[strings.ToLower(RollupsAddresses.Erc20PortalAddress)] = true
   KnownRollupsAddresses[strings.ToLower(RollupsAddresses.Erc721PortalAddress)] = true

@@ -23,11 +23,11 @@ ENV CGO_ENABLED=1
 ENV CC=riscv64-linux-gnu-gcc
 ENV PATH=/usr/local/go/bin:${PATH}
 
-COPY example.go .
+COPY app.go .
 
-RUN go mod init dapp && \
+RUN go mod init app && \
     go mod tidy && \
-    go build -o dapp example.go
+    go build -o app app.go
 
 # runtime stage: produces final image that will be executed
 FROM --platform=linux/riscv64 riscv64/ubuntu:22.04
@@ -47,15 +47,15 @@ apt-get update
 apt-get install -y --no-install-recommends \
   busybox-static=1:1.30.1-7ubuntu3
 rm -rf /var/lib/apt/lists/* /var/log/* /var/cache/*
-useradd --create-home --user-group dapp
+useradd --create-home --user-group app
 EOF
 
 ENV PATH="/opt/cartesi/bin:${PATH}"
 
-WORKDIR /opt/cartesi/dapp
-COPY --from=build-stage /opt/build/dapp .
+WORKDIR /opt/cartesi/app
+COPY app .
 
 ENV ROLLUP_HTTP_SERVER_URL="http://127.0.0.1:5004"
 
 ENTRYPOINT ["rollup-init"]
-CMD ["/opt/cartesi/dapp/dapp"]
+CMD ["/opt/cartesi/app/app"]
